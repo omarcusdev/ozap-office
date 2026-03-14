@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import type { ContentBlock, Message, ToolUseBlock, ToolResultBlock } from "@aws-sdk/client-bedrock-runtime"
+import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
 import { agents, taskRuns, events, meetingMessages } from "../db/schema.js"
 import { eq } from "drizzle-orm"
@@ -35,14 +35,16 @@ const buildBedrockTools = (tools: ToolDefinition[]) =>
       description: t.description,
       inputSchema: { json: t.inputSchema },
     },
-  }))
+  })) as any[]
 
-const extractToolUseBlocks = (content: ContentBlock[]): ToolUseBlock[] =>
-  content.filter((block): block is ToolUseBlock => "toolUse" in block)
+const extractToolUseBlocks = (content: ContentBlock[]) =>
+  content.filter((block): block is ContentBlock & { toolUse: NonNullable<ContentBlock["toolUse"]> } =>
+    block.toolUse !== undefined
+  )
 
 const extractTextContent = (content: ContentBlock[]): string =>
   content
-    .filter((block): block is { text: string } => "text" in block)
+    .filter((block): block is ContentBlock & { text: string } => typeof block.text === "string")
     .map((block) => block.text)
     .join("\n")
 
@@ -97,7 +99,7 @@ const runAgenticLoop = async (
   taskRunId: string,
   messages: Message[],
   agentTools: ToolDefinition[],
-  bedrockTools: ReturnType<typeof buildBedrockTools>
+  bedrockTools: any[]
 ): Promise<void> => {
   await updateAgentStatus(agent.id, "thinking")
   await emitEvent(agent.id, taskRunId, "thinking", "Processing...")
@@ -119,34 +121,36 @@ const runAgenticLoop = async (
     await updateAgentStatus(agent.id, "working")
     messages.push({ role: "assistant", content: result.output })
 
-    const toolResults: ToolResultBlock[] = []
-    for (const toolUse of toolUseBlocks) {
-      await emitEvent(agent.id, taskRunId, "tool_call", toolUse.toolUse!.name!, {
-        input: toolUse.toolUse!.input,
+    const toolResultContents: ContentBlock[] = []
+    for (const block of toolUseBlocks) {
+      const { toolUse } = block
+
+      await emitEvent(agent.id, taskRunId, "tool_call", toolUse.name!, {
+        input: toolUse.input,
       })
 
       const toolResult = await executeTool(
         agent.id,
-        toolUse.toolUse!.name!,
-        toolUse.toolUse!.input as Record<string, unknown>,
+        toolUse.name!,
+        toolUse.input as Record<string, unknown>,
         agentTools
       )
 
       await emitEvent(agent.id, taskRunId, "tool_result", toolResult.content, {
-        toolName: toolUse.toolUse!.name,
+        toolName: toolUse.name,
         isError: toolResult.isError,
       })
 
-      toolResults.push({
+      toolResultContents.push({
         toolResult: {
-          toolUseId: toolUse.toolUse!.toolUseId!,
+          toolUseId: toolUse.toolUseId!,
           content: [{ text: toolResult.content }],
           status: toolResult.isError ? "error" : "success",
         },
       })
     }
 
-    messages.push({ role: "user", content: toolResults as ContentBlock[] })
+    messages.push({ role: "user", content: toolResultContents })
     return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools)
   }
 
