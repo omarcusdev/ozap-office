@@ -1,6 +1,6 @@
-import { isoToScreen, CANVAS_CONFIG } from "./isometric"
-import { OFFICE_MAP, GRID } from "./tile-map"
-import { drawTile, drawAgent } from "./sprite-manager"
+import { gridToScreen, CANVAS_CONFIG } from "./isometric"
+import { OFFICE_MAP, GRID, ROOM_LABELS } from "./tile-map"
+import { drawTile, drawAgent, drawRoomLabel } from "./sprite-manager"
 import type { AgentStatus } from "@ozap-office/shared"
 
 type AgentRenderData = {
@@ -25,34 +25,24 @@ export const renderOffice = (
 ) => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
-  const { tileWidth, tileHeight, offsetX, offsetY } = CANVAS_CONFIG
-
   for (let y = 0; y < GRID.height; y++) {
     for (let x = 0; x < GRID.width; x++) {
       const tile = OFFICE_MAP[y][x]
       if (tile.type === "empty") continue
 
-      const { x: sx, y: sy } = isoToScreen(x, y)
-      drawTile(ctx, sx + offsetX, sy + offsetY, tile.type, tileWidth, tileHeight, tile.room)
+      const { x: sx, y: sy } = gridToScreen(x, y)
+      drawTile(ctx, sx, sy, tile.type, tile.room, tile.variant)
     }
   }
 
-  ctx.fillStyle = "#ffffff15"
-  ctx.font = "bold 10px monospace"
-  ctx.textAlign = "center"
-
-  const bossPos = isoToScreen(2, 1)
-  ctx.fillText("BOSS OFFICE", bossPos.x + offsetX, bossPos.y + offsetY - 24)
-
-  const meetingPos = isoToScreen(2, 7)
-  ctx.fillText("MEETING ROOM", meetingPos.x + offsetX, meetingPos.y + offsetY - 24)
-
-  const openPos = isoToScreen(9, 4)
-  ctx.fillText("OPEN OFFICE", openPos.x + offsetX, openPos.y + offsetY - 24)
+  for (const label of ROOM_LABELS) {
+    const { x: sx, y: sy } = gridToScreen(label.gridX, label.gridY)
+    drawRoomLabel(ctx, sx, sy, label.text)
+  }
 
   for (const agent of agents) {
-    const { x: sx, y: sy } = isoToScreen(agent.positionX, agent.positionY)
-    drawAgent(ctx, sx + offsetX, sy + offsetY, agent.color, agent.name, agent.status)
+    const { x: sx, y: sy } = gridToScreen(agent.positionX, agent.positionY)
+    drawAgent(ctx, sx, sy, agent.color, agent.name, agent.status)
   }
 }
 
@@ -61,26 +51,26 @@ export const hitTest = (
   clickY: number,
   agents: AgentRenderData[]
 ): ClickResult => {
-  const { offsetX, offsetY } = CANVAS_CONFIG
+  const { tileSize } = CANVAS_CONFIG
 
   for (const agent of agents) {
-    const { x: sx, y: sy } = isoToScreen(agent.positionX, agent.positionY)
-    const ax = sx + offsetX
-    const ay = sy + offsetY - 16
-    const distance = Math.sqrt((clickX - ax) ** 2 + (clickY - ay) ** 2)
-    if (distance < 20) return { type: "agent", agentId: agent.id }
+    const { x: sx, y: sy } = gridToScreen(agent.positionX, agent.positionY)
+    const ax = sx + tileSize / 2
+    const ay = sy + tileSize / 2
+    const dx = clickX - ax
+    const dy = clickY - ay
+    if (dx * dx + dy * dy < tileSize * tileSize) {
+      return { type: "agent", agentId: agent.id }
+    }
   }
 
-  for (let y = 5; y < 10; y++) {
-    for (let x = 0; x < 5; x++) {
-      const tile = OFFICE_MAP[y][x]
-      if (tile.room !== "meeting_room") continue
-      const { x: sx, y: sy } = isoToScreen(x, y)
-      const tx = sx + offsetX
-      const ty = sy + offsetY
-      if (Math.abs(clickX - tx) < 32 && Math.abs(clickY - ty) < 16) {
-        return { type: "meeting_room" }
-      }
+  const gridX = Math.floor(clickX / tileSize)
+  const gridY = Math.floor(clickY / tileSize)
+
+  if (gridX >= 0 && gridX < GRID.width && gridY >= 0 && gridY < GRID.height) {
+    const tile = OFFICE_MAP[gridY][gridX]
+    if (tile.room === "meeting_room") {
+      return { type: "meeting_room" }
     }
   }
 

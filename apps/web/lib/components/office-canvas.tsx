@@ -21,6 +21,8 @@ export const OfficeCanvas = () => {
     canvas.height = CANVAS_CONFIG.baseHeight * dpr
     ctx.scale(dpr, dpr)
 
+    ctx.imageSmoothingEnabled = false
+
     const render = () => {
       renderOffice(ctx, agents, CANVAS_CONFIG.baseWidth, CANVAS_CONFIG.baseHeight)
       requestAnimationFrame(render)
@@ -34,11 +36,11 @@ export const OfficeCanvas = () => {
       const canvas = canvasRef.current
       if (!canvas) return
 
-      const rect = canvas.getBoundingClientRect()
-      const scaleX = CANVAS_CONFIG.baseWidth / rect.width
-      const scaleY = CANVAS_CONFIG.baseHeight / rect.height
-      const x = (e.clientX - rect.left) * scaleX
-      const y = (e.clientY - rect.top) * scaleY
+      const canvasRect = canvas.getBoundingClientRect()
+      const scaleX = CANVAS_CONFIG.baseWidth / canvasRect.width
+      const scaleY = CANVAS_CONFIG.baseHeight / canvasRect.height
+      const x = (e.clientX - canvasRect.left) * scaleX
+      const y = (e.clientY - canvasRect.top) * scaleY
 
       const result = hitTest(x, y, agents)
 
@@ -63,6 +65,7 @@ export const OfficeCanvas = () => {
         height: "auto",
         aspectRatio: `${CANVAS_CONFIG.baseWidth} / ${CANVAS_CONFIG.baseHeight}`,
         cursor: "pointer",
+        imageRendering: "pixelated",
       }}
     />
   )

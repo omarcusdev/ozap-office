@@ -1,7 +1,8 @@
 import type { AgentStatus } from "@ozap-office/shared"
+import { CANVAS_CONFIG } from "./isometric"
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
-  idle: "#666666",
+  idle: "#888888",
   working: "#50fa7b",
   thinking: "#f1fa8c",
   waiting: "#ffb86c",
@@ -18,60 +19,298 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
   error: "X",
 }
 
-const ROOM_FLOOR_COLORS: Record<string, string> = {
-  boss_office: "#1e1e32",
-  meeting_room: "#1a2236",
-  open_office: "#222236",
-}
+const GRASS_COLORS = ["#5a8c3a", "#4e7d32", "#66994a"]
+const GRASS_DARK = ["#4a7a2e", "#3e6d26", "#558840"]
 
-const drawIsoDiamond = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  halfW: number,
-  halfH: number,
-  color: string
-) => {
+const rect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) => {
   ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.moveTo(x, y - halfH)
-  ctx.lineTo(x + halfW, y)
-  ctx.lineTo(x, y + halfH)
-  ctx.lineTo(x - halfW, y)
-  ctx.closePath()
-  ctx.fill()
+  ctx.fillRect(Math.round(x), Math.round(y), w, h)
 }
 
-const drawIsoBox = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  halfW: number,
-  halfH: number,
-  height: number,
-  topColor: string,
-  leftColor: string,
-  rightColor: string
-) => {
-  ctx.fillStyle = leftColor
-  ctx.beginPath()
-  ctx.moveTo(x - halfW, y)
-  ctx.lineTo(x, y + halfH)
-  ctx.lineTo(x, y + halfH + height)
-  ctx.lineTo(x - halfW, y + height)
-  ctx.closePath()
-  ctx.fill()
+const drawFloorWood = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#c4a882")
+  for (let py = 0; py < s; py += 8) {
+    rect(ctx, x, y + py, s, 1, "#b89a72")
+  }
+  rect(ctx, x, y, s, 1, "#cdb892")
+  rect(ctx, x, y, 1, s, "#cdb892")
+}
 
-  ctx.fillStyle = rightColor
-  ctx.beginPath()
-  ctx.moveTo(x + halfW, y)
-  ctx.lineTo(x, y + halfH)
-  ctx.lineTo(x, y + halfH + height)
-  ctx.lineTo(x + halfW, y + height)
-  ctx.closePath()
-  ctx.fill()
+const drawFloorTile = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#d4c8a8")
+  rect(ctx, x, y, s, 1, "#c4b898")
+  rect(ctx, x, y, 1, s, "#c4b898")
+  rect(ctx, x + s - 1, y, 1, s, "#baa888")
+  rect(ctx, x, y + s - 1, s, 1, "#baa888")
+}
 
-  drawIsoDiamond(ctx, x, y, halfW, halfH, topColor)
+const drawFloorCarpet = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b4444")
+  for (let py = 0; py < s; py += 4) {
+    for (let px = 0; px < s; px += 4) {
+      if ((px + py) % 8 === 0) {
+        rect(ctx, x + px, y + py, 2, 2, "#7a3838")
+      }
+    }
+  }
+}
+
+const drawGrass = (ctx: CanvasRenderingContext2D, x: number, y: number, variant: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  const colorIdx = variant % GRASS_COLORS.length
+  rect(ctx, x, y, s, s, GRASS_COLORS[colorIdx])
+
+  const darkColor = GRASS_DARK[colorIdx]
+  const seed = (x * 7 + y * 13) % 17
+  rect(ctx, x + (seed % 7) * 4, y + (seed % 5) * 6, 2, 3, darkColor)
+  rect(ctx, x + ((seed + 3) % 8) * 4, y + ((seed + 7) % 5) * 6, 2, 2, darkColor)
+  rect(ctx, x + ((seed + 5) % 7) * 4, y + ((seed + 2) % 6) * 5, 3, 2, darkColor)
+}
+
+const drawPath = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#c8b888")
+  const seed = (x * 3 + y * 11) % 13
+  rect(ctx, x + seed % 6 * 4, y + seed % 4 * 6, 3, 3, "#baa878")
+  rect(ctx, x + (seed + 4) % 7 * 4, y + (seed + 2) % 5 * 5, 2, 2, "#b8a070")
+}
+
+const drawWallTop = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b7355")
+  rect(ctx, x, y, s, 4, "#5a4a3a")
+
+  for (let by = 6; by < s; by += 8) {
+    const offset = (by % 16 === 6) ? 0 : 8
+    for (let bx = offset; bx < s; bx += 16) {
+      rect(ctx, x + bx, y + by, 14, 6, "#7a6345")
+      rect(ctx, x + bx, y + by, 14, 1, "#8a7355")
+    }
+  }
+
+  rect(ctx, x, y + s - 2, s, 2, "#6a5a44")
+}
+
+const drawWallLeft = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b7355")
+  rect(ctx, x, y, 4, s, "#5a4a3a")
+
+  for (let by = 0; by < s; by += 8) {
+    const offset = (by % 16 === 0) ? 0 : 8
+    for (let bx = 6; bx < s; bx += 16) {
+      rect(ctx, x + bx, y + by, 6, 6, "#7a6345")
+    }
+    for (let bx = 6 + offset; bx < s; bx += 16) {
+      rect(ctx, x + bx, y + by, 6, 6, "#7a6345")
+    }
+  }
+}
+
+const drawWallRight = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b7355")
+  rect(ctx, x + s - 4, y, 4, s, "#5a4a3a")
+
+  for (let by = 0; by < s; by += 8) {
+    for (let bx = 0; bx < s - 6; bx += 16) {
+      rect(ctx, x + bx, y + by, 6, 6, "#7a6345")
+    }
+  }
+}
+
+const drawWallBottom = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b7355")
+  rect(ctx, x, y + s - 4, s, 4, "#5a4a3a")
+
+  for (let by = 0; by < s - 6; by += 8) {
+    const offset = (by % 16 === 0) ? 0 : 8
+    for (let bx = offset; bx < s; bx += 16) {
+      rect(ctx, x + bx, y + by, 14, 6, "#7a6345")
+      rect(ctx, x + bx, y + by + 5, 14, 1, "#6a5335")
+    }
+  }
+
+  rect(ctx, x, y, s, 2, "#6a5a44")
+}
+
+const drawWallCorner = (ctx: CanvasRenderingContext2D, x: number, y: number, corner: string) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b7355")
+
+  if (corner === "tl") {
+    rect(ctx, x, y, s, 4, "#5a4a3a")
+    rect(ctx, x, y, 4, s, "#5a4a3a")
+  } else if (corner === "tr") {
+    rect(ctx, x, y, s, 4, "#5a4a3a")
+    rect(ctx, x + s - 4, y, 4, s, "#5a4a3a")
+  } else if (corner === "bl") {
+    rect(ctx, x, y + s - 4, s, 4, "#5a4a3a")
+    rect(ctx, x, y, 4, s, "#5a4a3a")
+  } else if (corner === "br") {
+    rect(ctx, x, y + s - 4, s, 4, "#5a4a3a")
+    rect(ctx, x + s - 4, y, 4, s, "#5a4a3a")
+  }
+
+  rect(ctx, x + 4, y + 4, s - 8, s - 8, "#7a6345")
+}
+
+const drawDesk = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#d4c8a8")
+  rect(ctx, x, y, s, 1, "#c4b898")
+  rect(ctx, x, y, 1, s, "#c4b898")
+
+  rect(ctx, x + 2, y + 4, s - 4, s - 8, "#e8e0d0")
+  rect(ctx, x + 2, y + 4, s - 4, 1, "#f0e8d8")
+  rect(ctx, x + 2, y + 4, 1, s - 8, "#f0e8d8")
+  rect(ctx, x + s - 3, y + 4, 1, s - 8, "#999")
+  rect(ctx, x + 2, y + s - 5, s - 4, 1, "#999")
+
+  rect(ctx, x + 4, y + s - 3, 3, 3, "#888")
+  rect(ctx, x + s - 7, y + s - 3, 3, 3, "#888")
+}
+
+const drawMonitor = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#d4c8a8")
+  rect(ctx, x, y, s, 1, "#c4b898")
+
+  rect(ctx, x + 2, y + 4, s - 4, s - 8, "#e8e0d0")
+  rect(ctx, x + 2, y + 4, s - 4, 1, "#f0e8d8")
+  rect(ctx, x + 2, y + s - 5, s - 4, 1, "#999")
+
+  rect(ctx, x + 6, y + 2, s - 12, s - 14, "#222233")
+  rect(ctx, x + 7, y + 3, s - 14, s - 16, "#3a5a8a")
+  rect(ctx, x + 7, y + 3, s - 14, 2, "#5a8abb")
+
+  rect(ctx, x + 8, y + 6, 4, 1, "#88bbee")
+  rect(ctx, x + 8, y + 8, 6, 1, "#88bbee")
+  rect(ctx, x + 8, y + 10, 3, 1, "#88bbee")
+
+  rect(ctx, x + s / 2 - 1, y + s - 10, 2, 3, "#444")
+  rect(ctx, x + s / 2 - 3, y + s - 7, 6, 2, "#555")
+}
+
+const drawChair = (ctx: CanvasRenderingContext2D, x: number, y: number, room: string | null) => {
+  const s = CANVAS_CONFIG.tileSize
+  const floorColor = room === "boss_office" ? "#c4a882" : room === "meeting_room" ? "#c4a882" : "#d4c8a8"
+  rect(ctx, x, y, s, s, floorColor)
+  if (room !== "boss_office" && room !== "meeting_room") {
+    rect(ctx, x, y, s, 1, "#c4b898")
+    rect(ctx, x, y, 1, s, "#c4b898")
+  } else {
+    rect(ctx, x, y, s, 1, "#cdb892")
+    rect(ctx, x, y, 1, s, "#cdb892")
+  }
+
+  rect(ctx, x + 8, y + 6, 16, 18, "#333")
+  rect(ctx, x + 9, y + 7, 14, 16, "#444")
+
+  rect(ctx, x + 10, y + 2, 12, 6, "#333")
+  rect(ctx, x + 11, y + 3, 10, 4, "#555")
+
+  rect(ctx, x + 10, y + 24, 2, 4, "#222")
+  rect(ctx, x + 20, y + 24, 2, 4, "#222")
+}
+
+const drawPlant = (ctx: CanvasRenderingContext2D, x: number, y: number, room: string | null) => {
+  const s = CANVAS_CONFIG.tileSize
+  if (room === "outdoor") {
+    rect(ctx, x, y, s, s, "#5a8c3a")
+  } else if (room === "boss_office") {
+    rect(ctx, x, y, s, s, "#c4a882")
+    rect(ctx, x, y, s, 1, "#cdb892")
+  } else {
+    rect(ctx, x, y, s, s, "#d4c8a8")
+    rect(ctx, x, y, s, 1, "#c4b898")
+  }
+
+  rect(ctx, x + 10, y + 20, 12, 10, "#8b5e3c")
+  rect(ctx, x + 11, y + 21, 10, 8, "#a0704a")
+
+  rect(ctx, x + 14, y + 16, 4, 6, "#3a6a22")
+
+  rect(ctx, x + 8, y + 8, 8, 10, "#4a8a2a")
+  rect(ctx, x + 16, y + 6, 8, 10, "#3a7a1e")
+  rect(ctx, x + 10, y + 4, 10, 8, "#5a9a32")
+  rect(ctx, x + 12, y + 2, 6, 6, "#4a8a2a")
+}
+
+const drawBookshelf = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#c4a882")
+  rect(ctx, x, y, s, 1, "#cdb892")
+
+  rect(ctx, x + 2, y + 2, s - 4, s - 4, "#6a4a2a")
+  rect(ctx, x + 3, y + 3, s - 6, s - 6, "#7a5a3a")
+
+  rect(ctx, x + 3, y + 14, s - 6, 2, "#6a4a2a")
+
+  const bookColors = ["#cc4444", "#4488cc", "#44aa44", "#cc8844", "#8844aa", "#44aaaa"]
+  for (let i = 0; i < 5; i++) {
+    rect(ctx, x + 4 + i * 5, y + 4, 4, 10, bookColors[i])
+    rect(ctx, x + 4 + i * 5, y + 4, 4, 1, bookColors[i + 1] || bookColors[0])
+  }
+
+  for (let i = 0; i < 4; i++) {
+    rect(ctx, x + 5 + i * 6, y + 17, 4, 10, bookColors[(i + 2) % 6])
+    rect(ctx, x + 5 + i * 6, y + 17, 4, 1, bookColors[(i + 3) % 6])
+  }
+}
+
+const drawWhiteboard = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#c4a882")
+  rect(ctx, x, y, s, 1, "#cdb892")
+
+  rect(ctx, x + 2, y + 2, s - 4, s - 6, "#888")
+  rect(ctx, x + 3, y + 3, s - 6, s - 8, "#eeeef4")
+
+  rect(ctx, x + 6, y + 6, 10, 2, "#dd4444")
+  rect(ctx, x + 6, y + 10, 16, 2, "#4488cc")
+  rect(ctx, x + 6, y + 14, 8, 2, "#44aa44")
+  rect(ctx, x + 6, y + 18, 14, 2, "#cc8844")
+
+  rect(ctx, x + 4, y + s - 3, 4, 2, "#cc3333")
+  rect(ctx, x + 10, y + s - 3, 4, 2, "#3388cc")
+  rect(ctx, x + 16, y + s - 3, 4, 2, "#33aa33")
+}
+
+const drawRug = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#8b4444")
+  rect(ctx, x + 2, y + 2, s - 4, s - 4, "#9a5050")
+  rect(ctx, x + 4, y + 4, s - 8, s - 8, "#8b4444")
+  rect(ctx, x + 2, y + 2, s - 4, 1, "#aa6060")
+  rect(ctx, x + 2, y + 2, 1, s - 4, "#aa6060")
+}
+
+const drawCoffeeMachine = (ctx: CanvasRenderingContext2D, x: number, y: number, room: string | null) => {
+  const s = CANVAS_CONFIG.tileSize
+  if (room === "hallway") {
+    rect(ctx, x, y, s, s, "#d4c8a8")
+    rect(ctx, x, y, s, 1, "#c4b898")
+  } else {
+    rect(ctx, x, y, s, s, "#d4c8a8")
+    rect(ctx, x, y, s, 1, "#c4b898")
+  }
+
+  rect(ctx, x + 6, y + 8, 20, 22, "#333")
+  rect(ctx, x + 7, y + 9, 18, 20, "#444")
+
+  rect(ctx, x + 8, y + 4, 16, 6, "#333")
+  rect(ctx, x + 9, y + 5, 14, 4, "#555")
+
+  rect(ctx, x + 9, y + 12, 8, 6, "#222")
+  rect(ctx, x + 10, y + 13, 6, 4, "#664422")
+
+  rect(ctx, x + 20, y + 12, 4, 2, "#ff3333")
+  rect(ctx, x + 20, y + 16, 4, 2, "#33ff33")
 }
 
 export const drawTile = (
@@ -79,56 +318,35 @@ export const drawTile = (
   screenX: number,
   screenY: number,
   type: string,
-  tileWidth: number,
-  tileHeight: number,
-  room?: string | null
+  room?: string | null,
+  variant?: number
 ) => {
-  const halfW = tileWidth / 2
-  const halfH = tileHeight / 2
-
-  if (type === "empty") return
-
-  if (type === "wall") {
-    drawIsoBox(ctx, screenX, screenY - 20, halfW, halfH, 20, "#3a3a5e", "#2a2a4e", "#1e1e3e")
-    return
+  const drawFunctions: Record<string, () => void> = {
+    floor_wood: () => drawFloorWood(ctx, screenX, screenY),
+    floor_tile: () => drawFloorTile(ctx, screenX, screenY),
+    floor_carpet: () => drawFloorCarpet(ctx, screenX, screenY),
+    wall_top: () => drawWallTop(ctx, screenX, screenY),
+    wall_left: () => drawWallLeft(ctx, screenX, screenY),
+    wall_right: () => drawWallRight(ctx, screenX, screenY),
+    wall_bottom: () => drawWallBottom(ctx, screenX, screenY),
+    wall_corner_tl: () => drawWallCorner(ctx, screenX, screenY, "tl"),
+    wall_corner_tr: () => drawWallCorner(ctx, screenX, screenY, "tr"),
+    wall_corner_bl: () => drawWallCorner(ctx, screenX, screenY, "bl"),
+    wall_corner_br: () => drawWallCorner(ctx, screenX, screenY, "br"),
+    desk: () => drawDesk(ctx, screenX, screenY),
+    monitor: () => drawMonitor(ctx, screenX, screenY),
+    chair: () => drawChair(ctx, screenX, screenY, room ?? null),
+    plant: () => drawPlant(ctx, screenX, screenY, room ?? null),
+    bookshelf: () => drawBookshelf(ctx, screenX, screenY),
+    whiteboard: () => drawWhiteboard(ctx, screenX, screenY),
+    rug: () => drawRug(ctx, screenX, screenY),
+    coffee_machine: () => drawCoffeeMachine(ctx, screenX, screenY, room ?? null),
+    grass: () => drawGrass(ctx, screenX, screenY, variant ?? 0),
+    path: () => drawPath(ctx, screenX, screenY),
   }
 
-  const floorColor = room ? (ROOM_FLOOR_COLORS[room] ?? "#2a2a3e") : "#2a2a3e"
-  drawIsoDiamond(ctx, screenX, screenY, halfW, halfH, floorColor)
-
-  ctx.strokeStyle = "#ffffff08"
-  ctx.lineWidth = 0.5
-  ctx.beginPath()
-  ctx.moveTo(screenX, screenY - halfH)
-  ctx.lineTo(screenX + halfW, screenY)
-  ctx.lineTo(screenX, screenY + halfH)
-  ctx.lineTo(screenX - halfW, screenY)
-  ctx.closePath()
-  ctx.stroke()
-
-  if (type === "desk") {
-    drawIsoBox(ctx, screenX, screenY - 8, halfW * 0.6, halfH * 0.6, 8, "#5a4a3a", "#4a3a2a", "#3a2a1a")
-    drawIsoBox(ctx, screenX - 4, screenY - 14, 4, 3, 4, "#333355", "#2a2a44", "#222238")
-    ctx.fillStyle = "#4a9eff33"
-    ctx.fillRect(screenX - 7, screenY - 18, 6, 3)
-  }
-
-  if (type === "whiteboard") {
-    drawIsoBox(ctx, screenX, screenY - 24, halfW * 0.7, halfH * 0.3, 24, "#aaaacc", "#888aaa", "#666688")
-  }
-
-  if (type === "door") {
-    drawIsoDiamond(ctx, screenX, screenY, halfW, halfH, "#3a3a5e")
-    ctx.strokeStyle = "#50fa7b44"
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(screenX, screenY - halfH)
-    ctx.lineTo(screenX + halfW, screenY)
-    ctx.lineTo(screenX, screenY + halfH)
-    ctx.lineTo(screenX - halfW, screenY)
-    ctx.closePath()
-    ctx.stroke()
-  }
+  const drawFn = drawFunctions[type]
+  if (drawFn) drawFn()
 }
 
 const drawCharacterBody = (
@@ -137,25 +355,32 @@ const drawCharacterBody = (
   y: number,
   color: string
 ) => {
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.arc(x, y - 24, 6, 0, Math.PI * 2)
-  ctx.fill()
+  const cx = x + 10
+  const cy = y + 4
 
-  ctx.fillStyle = "#ddccbb"
-  ctx.beginPath()
-  ctx.arc(x, y - 24, 4, Math.PI, 0)
-  ctx.fill()
+  rect(ctx, cx, cy - 2, 12, 4, "#00000022")
 
-  ctx.fillStyle = color
-  ctx.fillRect(x - 5, y - 18, 10, 10)
+  rect(ctx, cx + 3, cy - 18, 6, 3, color)
 
-  ctx.fillStyle = "#222222"
-  ctx.fillRect(x - 4, y - 8, 3, 6)
-  ctx.fillRect(x + 1, y - 8, 3, 6)
+  rect(ctx, cx + 3, cy - 15, 6, 4, "#f0c8a0")
+  rect(ctx, cx + 4, cy - 13, 2, 1, "#333")
+  rect(ctx, cx + 7, cy - 13, 2, 1, "#333")
 
-  ctx.fillStyle = "#ffffff22"
-  ctx.fillRect(x - 3, y - 16, 6, 4)
+  rect(ctx, cx + 2, cy - 11, 8, 6, color)
+
+  const darkerColor = darkenColor(color, 30)
+  rect(ctx, cx, cy - 11, 2, 4, darkerColor)
+  rect(ctx, cx + 10, cy - 11, 2, 4, darkerColor)
+
+  rect(ctx, cx + 3, cy - 5, 3, 4, "#333333")
+  rect(ctx, cx + 7, cy - 5, 3, 4, "#333333")
+}
+
+const darkenColor = (hex: string, amount: number): string => {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount)
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount)
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount)
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
 }
 
 const drawStatusBubble = (
@@ -164,24 +389,41 @@ const drawStatusBubble = (
   y: number,
   status: AgentStatus
 ) => {
-  const bubbleY = y - 38
+  const bubbleX = x + 10
+  const bubbleY = y - 20
   const color = STATUS_COLORS[status]
   const label = STATUS_LABELS[status]
 
-  ctx.fillStyle = "#00000088"
-  ctx.beginPath()
-  ctx.roundRect(x - 10, bubbleY - 8, 20, 14, 4)
-  ctx.fill()
+  rect(ctx, bubbleX - 1, bubbleY - 1, 16, 12, "#00000088")
+  rect(ctx, bubbleX, bubbleY, 14, 10, "#222233dd")
 
   ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.roundRect(x - 9, bubbleY - 7, 18, 12, 3)
-  ctx.fill()
-
-  ctx.fillStyle = "#000000"
   ctx.font = "bold 8px monospace"
   ctx.textAlign = "center"
-  ctx.fillText(label, x, bubbleY + 2)
+  ctx.fillText(label, bubbleX + 7, bubbleY + 8)
+}
+
+const drawNameLabel = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  name: string,
+  status: AgentStatus
+) => {
+  const labelY = y + 8
+  const textWidth = name.length * 5 + 14
+  const labelX = x + 16 - textWidth / 2
+
+  rect(ctx, labelX - 1, labelY - 1, textWidth + 2, 12, "#00000044")
+  rect(ctx, labelX, labelY, textWidth, 10, "#ffffffdd")
+
+  const dotColor = STATUS_COLORS[status]
+  rect(ctx, labelX + 2, labelY + 3, 4, 4, dotColor)
+
+  ctx.fillStyle = "#222222"
+  ctx.font = "bold 7px monospace"
+  ctx.textAlign = "left"
+  ctx.fillText(name, labelX + 8, labelY + 8)
 }
 
 export const drawAgent = (
@@ -194,15 +436,24 @@ export const drawAgent = (
 ) => {
   drawCharacterBody(ctx, screenX, screenY, color)
   drawStatusBubble(ctx, screenX, screenY, status)
+  drawNameLabel(ctx, screenX, screenY, name, status)
+}
 
-  ctx.fillStyle = "#ffffff"
-  ctx.font = "bold 9px monospace"
+export const drawRoomLabel = (
+  ctx: CanvasRenderingContext2D,
+  screenX: number,
+  screenY: number,
+  text: string
+) => {
+  const textWidth = text.length * 6 + 8
+  const labelX = screenX - textWidth / 2 + 16
+  const labelY = screenY + 6
+
+  rect(ctx, labelX - 1, labelY - 1, textWidth + 2, 14, "#5a4a3a")
+  rect(ctx, labelX, labelY, textWidth, 12, "#f0e8d8")
+
+  ctx.fillStyle = "#5a4a3a"
+  ctx.font = "bold 8px monospace"
   ctx.textAlign = "center"
-  ctx.fillText(name, screenX, screenY + 8)
-
-  ctx.strokeStyle = STATUS_COLORS[status]
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.arc(screenX, screenY - 24, 8, 0, Math.PI * 2)
-  ctx.stroke()
+  ctx.fillText(text, labelX + textWidth / 2, labelY + 9)
 }

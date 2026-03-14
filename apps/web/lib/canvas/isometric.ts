@@ -1,21 +1,19 @@
-const TILE_WIDTH = 64
-const TILE_HEIGHT = 32
+const TILE_SIZE = 32
 
-export const isoToScreen = (tileX: number, tileY: number): { x: number; y: number } => ({
-  x: (tileX - tileY) * (TILE_WIDTH / 2),
-  y: (tileX + tileY) * (TILE_HEIGHT / 2),
+export const gridToScreen = (gridX: number, gridY: number): { x: number; y: number } => ({
+  x: gridX * TILE_SIZE,
+  y: gridY * TILE_SIZE,
 })
 
-export const screenToIso = (screenX: number, screenY: number): { x: number; y: number } => ({
-  x: Math.floor((screenX / (TILE_WIDTH / 2) + screenY / (TILE_HEIGHT / 2)) / 2),
-  y: Math.floor((screenY / (TILE_HEIGHT / 2) - screenX / (TILE_WIDTH / 2)) / 2),
+export const screenToGrid = (screenX: number, screenY: number): { x: number; y: number } => ({
+  x: Math.floor(screenX / TILE_SIZE),
+  y: Math.floor(screenY / TILE_SIZE),
 })
 
 export const CANVAS_CONFIG = {
-  tileWidth: TILE_WIDTH,
-  tileHeight: TILE_HEIGHT,
+  tileSize: TILE_SIZE,
   baseWidth: 960,
   baseHeight: 640,
-  offsetX: 480,
-  offsetY: 80,
+  gridWidth: 30,
+  gridHeight: 20,
 }

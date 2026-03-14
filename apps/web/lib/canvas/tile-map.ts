@@ -1,66 +1,100 @@
-export type TileType = "floor" | "wall" | "door" | "desk" | "chair" | "monitor" | "whiteboard" | "empty"
+export type TileType =
+  | "floor_wood"
+  | "floor_tile"
+  | "floor_carpet"
+  | "wall_top"
+  | "wall_left"
+  | "wall_right"
+  | "wall_bottom"
+  | "wall_corner_tl"
+  | "wall_corner_tr"
+  | "wall_corner_bl"
+  | "wall_corner_br"
+  | "desk"
+  | "chair"
+  | "monitor"
+  | "plant"
+  | "bookshelf"
+  | "whiteboard"
+  | "rug"
+  | "coffee_machine"
+  | "grass"
+  | "path"
+  | "empty"
 
-export type RoomType = "boss_office" | "meeting_room" | "open_office"
+export type RoomType = "boss_office" | "meeting_room" | "open_office" | "hallway" | "outdoor"
 
 export type Tile = {
   type: TileType
   room: RoomType | null
-  walkable: boolean
+  variant?: number
 }
 
-const GRID_WIDTH = 15
-const GRID_HEIGHT = 10
+const GRID_WIDTH = 30
+const GRID_HEIGHT = 20
 
-const createTile = (type: TileType, room: RoomType | null = null, walkable = true): Tile => ({
+const t = (type: TileType, room: RoomType | null = null, variant?: number): Tile => ({
   type,
   room,
-  walkable: type !== "wall" && type !== "empty" && walkable,
+  ...(variant !== undefined ? { variant } : {}),
 })
 
-export const createOfficeMap = (): Tile[][] => {
-  const map: Tile[][] = Array.from({ length: GRID_HEIGHT }, () =>
-    Array.from({ length: GRID_WIDTH }, () => createTile("empty", null, false))
-  )
+const G = (v?: number) => t("grass", "outdoor", v)
+const P = () => t("path", "outdoor")
+const FW = (room: RoomType) => t("floor_wood", room)
+const FT = (room: RoomType) => t("floor_tile", room)
+const FC = (room: RoomType) => t("floor_carpet", room)
+const WT = (room: RoomType) => t("wall_top", room)
+const WL = (room: RoomType) => t("wall_left", room)
+const WR = (room: RoomType) => t("wall_right", room)
+const WB = (room: RoomType) => t("wall_bottom", room)
+const CTL = (room: RoomType) => t("wall_corner_tl", room)
+const CTR = (room: RoomType) => t("wall_corner_tr", room)
+const CBL = (room: RoomType) => t("wall_corner_bl", room)
+const CBR = (room: RoomType) => t("wall_corner_br", room)
+const DK = (room: RoomType) => t("desk", room)
+const CH = (room: RoomType) => t("chair", room)
+const MN = (room: RoomType) => t("monitor", room)
+const PL = (room: RoomType) => t("plant", room)
+const BS = (room: RoomType) => t("bookshelf", room)
+const WH = (room: RoomType) => t("whiteboard", room)
+const RG = (room: RoomType) => t("rug", room)
+const CF = (room: RoomType) => t("coffee_machine", room)
+const HW = () => FT("hallway")
 
-  for (let y = 0; y < 4; y++) {
-    for (let x = 0; x < 5; x++) {
-      const isWall = y === 0 || x === 0 || (x === 4 && y < 3)
-      map[y][x] = isWall
-        ? createTile("wall", "boss_office", false)
-        : createTile("floor", "boss_office")
-    }
-  }
-  map[3][4] = createTile("door", "boss_office")
-  map[2][2] = createTile("desk", "boss_office")
+const b = "boss_office" as const
+const m = "meeting_room" as const
+const o = "open_office" as const
 
-  for (let y = 5; y < 10; y++) {
-    for (let x = 0; x < 5; x++) {
-      const isWall = y === 9 || x === 0 || (x === 4 && y > 5)
-      map[y][x] = isWall
-        ? createTile("wall", "meeting_room", false)
-        : createTile("floor", "meeting_room")
-    }
-  }
-  map[5][4] = createTile("door", "meeting_room")
-  map[7][2] = createTile("whiteboard", "meeting_room")
-
-  for (let y = 0; y < 10; y++) {
-    for (let x = 5; x < 15; x++) {
-      const isWall = y === 0 || y === 9 || x === 14
-      map[y][x] = isWall
-        ? createTile("wall", "open_office", false)
-        : createTile("floor", "open_office")
-    }
-  }
-
-  map[2][7] = createTile("desk", "open_office")
-  map[2][11] = createTile("desk", "open_office")
-  map[5][7] = createTile("desk", "open_office")
-  map[5][11] = createTile("desk", "open_office")
-  map[7][9] = createTile("desk", "open_office")
-
-  return map
-}
+export const createOfficeMap = (): Tile[][] => [
+  //  0        1        2        3        4        5        6        7        8        9        10       11       12       13       14       15       16       17       18       19       20       21       22       23       24       25       26       27       28       29
+  [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G()    ], // row 0
+  [G(),     CTL(b),  WT(b),   WT(b),   WT(b),   WT(b),   WT(b),   WT(b),   CTR(b),  G(1),    P(),     G(),     CTL(o),  WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   CTR(o),  G()    ], // row 1
+  [G(2),    WL(b),   FW(b),   FW(b),   FC(b),   FC(b),   FW(b),   FW(b),   WR(b),   G(),     P(),     G(2),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(1)   ], // row 2
+  [G(),     WL(b),   FW(b),   DK(b),   FC(b),   FC(b),   BS(b),   FW(b),   WR(b),   G(),     P(),     G(),     WL(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 3
+  [G(1),    WL(b),   FW(b),   CH(b),   FC(b),   FC(b),   FW(b),   PL(b),   WR(b),   G(2),    P(),     G(1),    WL(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   PL(o),   FT(o),   WR(o),   G()    ], // row 4
+  [G(),     WL(b),   RG(b),   RG(b),   RG(b),   FW(b),   FW(b),   FW(b),   FT(b),   HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(2)   ], // row 5
+  [G(),     CBL(b),  WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   CBR(b),  HW(),    HW(),    HW(),    WL(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 6
+  [G(1),    G(),     G(),     PL("outdoor"),G(),G(),      G(1),    CF("hallway"),HW(),HW(),   HW(),    HW(),    WL(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   FT(o),   PL(o),   WR(o),   G(1)   ], // row 7
+  [G(),     G(2),    G(),     G(),     G(),     G(),     G(),     G(),     HW(),    HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   CF(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 8
+  [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     HW(),    HW(),    HW(),    HW(),    CBL(o),  WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   CBR(o),  G()    ], // row 9
+  [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10
+  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     P(),     CTL(m),  WT(m),   WT(m),   WT(m),   WT(m),   WT(m),   WT(m),   CTR(m),  G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G()    ], // row 11
+  [G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(),     P(),     P(),     WL(m),   FW(m),   FW(m),   FW(m),   FW(m),   FW(m),   FW(m),   WR(m),   G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(2),    G()    ], // row 12
+  [G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     WL(m),   FW(m),   FW(m),   DK(m),   DK(m),   DK(m),   FW(m),   WR(m),   G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(),     G(1)   ], // row 13
+  [G(),     G(),     G(1),    G(),     G(),     G(1),    G(),     G(),     G(2),    P(),     WL(m),   FW(m),   CH(m),   FW(m),   FW(m),   FW(m),   CH(m),   WR(m),   G(1),    G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G()    ], // row 14
+  [G(2),    G(),     G(),     G(),     G(),     G(),     G(2),    G(),     G(),     P(),     WL(m),   FW(m),   CH(m),   FW(m),   WH(m),   FW(m),   CH(m),   WR(m),   G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G()    ], // row 15
+  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     P(),     WL(m),   FW(m),   CH(m),   FW(m),   FW(m),   FW(m),   CH(m),   WR(m),   G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 16
+  [G(),     G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     P(),     CBL(m),  WB(m),   WB(m),   WB(m),   WB(m),   WB(m),   WB(m),   CBR(m),  G(1),    G(),     G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    G()    ], // row 17
+  [G(1),    G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     PL("outdoor"),G(),G(1),    G(),     G(),     G(),     G(),     G(1),    G(2),    G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G()    ], // row 18
+  [G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(1),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(1)   ], // row 19
+]
 
 export const OFFICE_MAP = createOfficeMap()
 export const GRID = { width: GRID_WIDTH, height: GRID_HEIGHT }
+
+export const ROOM_LABELS: Array<{ text: string; gridX: number; gridY: number }> = [
+  { text: "BOSS OFFICE", gridX: 4, gridY: 1 },
+  { text: "OPEN OFFICE", gridX: 20, gridY: 1 },
+  { text: "MEETING ROOM", gridX: 13, gridY: 11 },
+]
