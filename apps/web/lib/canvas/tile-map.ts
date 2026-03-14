@@ -84,8 +84,8 @@ export const createOfficeMap = (): Tile[][] => [
   [G(),     CBL(b),  WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   CBR(b),  HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 6
   [G(1),    G(),     G(),     PL("outdoor"),G(),G(),      G(1),    CF("hallway"),HW(),HW(),   HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(1)   ], // row 7
   [G(),     G(2),    G(),     G(),     G(),     G(),     G(),     G(),     HW(),    HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   CF(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 8
-  [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     HW(),    HW(),    HW(),    HW(),    CBL(o),  WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   CBR(o),  G()    ], // row 9
-  [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10
+  [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     HW(),    HW(),    HW(),    HW(),    CBL(o),  FT(o),   FT(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   CBR(o),  G()    ], // row 9 (door opening at cols 13-14)
+  [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10 (open office south door at cols 13-14 connects to hallway here)
   [G(),     G(1),    G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     P(),     CTL(m),  WT(m),   WT(m),   WT(m),   WT(m),   WT(m),   WT(m),   CTR(m),  G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G()    ], // row 11
   [G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(),     P(),     P(),     WL(m),   WH(m),   FW(m),   CH(m),   CH(m),   CH(m),   FW(m),   WR(m),   G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(2),    G()    ], // row 12
   [G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     WL(m),   FW(m),   CH(m),   TB(m),   TB(m),   TB(m),   CH(m),   WR(m),   G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(),     G(1)   ], // row 13
@@ -113,3 +113,51 @@ export const OPEN_OFFICE_DESK_POSITIONS: Array<{ gridX: number; gridY: number }>
   { gridX: 23, gridY: 4 },
   { gridX: 26, gridY: 4 },
 ]
+
+type Waypoint = { x: number; y: number }
+
+export const MEETING_ROUTES: Record<string, { path: Waypoint[]; seat: Waypoint }> = {
+  Leader: {
+    path: [
+      { x: 2, y: 4 }, { x: 4, y: 5 }, { x: 8, y: 5 },
+      { x: 9, y: 7 }, { x: 10, y: 10 }, { x: 13, y: 11 },
+      { x: 14, y: 12 },
+    ],
+    seat: { x: 14, y: 12 },
+  },
+  Instagram: {
+    path: [
+      { x: 14, y: 5 }, { x: 13, y: 8 }, { x: 13, y: 10 },
+      { x: 12, y: 11 }, { x: 12, y: 13 },
+    ],
+    seat: { x: 12, y: 13 },
+  },
+  Sales: {
+    path: [
+      { x: 17, y: 5 }, { x: 14, y: 8 }, { x: 13, y: 10 },
+      { x: 15, y: 11 }, { x: 16, y: 13 },
+    ],
+    seat: { x: 16, y: 13 },
+  },
+  Ads: {
+    path: [
+      { x: 20, y: 5 }, { x: 16, y: 8 }, { x: 13, y: 10 },
+      { x: 11, y: 12 }, { x: 12, y: 15 },
+    ],
+    seat: { x: 12, y: 15 },
+  },
+  Finance: {
+    path: [
+      { x: 23, y: 5 }, { x: 18, y: 8 }, { x: 14, y: 10 },
+      { x: 16, y: 12 }, { x: 16, y: 15 },
+    ],
+    seat: { x: 16, y: 15 },
+  },
+  PM: {
+    path: [
+      { x: 26, y: 5 }, { x: 20, y: 8 }, { x: 14, y: 10 },
+      { x: 14, y: 12 }, { x: 14, y: 16 },
+    ],
+    seat: { x: 14, y: 16 },
+  },
+}

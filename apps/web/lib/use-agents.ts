@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { api } from "./api-client"
+import { MEETING_ROUTES } from "./canvas/tile-map"
 import type { AgentStatus } from "@ozap-office/shared"
 
 type AgentState = {
@@ -16,26 +17,26 @@ type AgentState = {
 
 export type RenderPosition = { x: number; y: number }
 
-const MEETING_SEATS: RenderPosition[] = [
-  { x: 14, y: 12 },
-  { x: 12, y: 13 },
-  { x: 16, y: 13 },
-  { x: 12, y: 15 },
-  { x: 16, y: 15 },
-  { x: 14, y: 16 },
-]
+type WaypointState = {
+  waypoints: RenderPosition[]
+  currentIndex: number
+  progress: number
+  startDelay: number
+  started: boolean
+}
 
-const LERP_SPEED = 0.03
+const MOVE_SPEED = 0.02
+const STAGGER_DELAY_MS = 800
 
 export const useAgents = () => {
   const [agents, setAgents] = useState<AgentState[]>([])
   const [loading, setLoading] = useState(true)
   const [inMeeting, setInMeeting] = useState(false)
   const renderPositionsRef = useRef<Record<string, RenderPosition>>({})
-  const targetPositionsRef = useRef<Record<string, RenderPosition>>({})
   const originalPositionsRef = useRef<Record<string, RenderPosition>>({})
+  const waypointStatesRef = useRef<Record<string, WaypointState>>({})
+  const animationStartRef = useRef<number>(0)
   const [renderTick, setRenderTick] = useState(0)
-  const animatingRef = useRef(false)
 
   useEffect(() => {
     api.getAgents().then((data) => {
@@ -49,7 +50,6 @@ export const useAgents = () => {
         originals[agent.id] = { x: agent.positionX, y: agent.positionY }
       }
       renderPositionsRef.current = positions
-      targetPositionsRef.current = { ...positions }
       originalPositionsRef.current = originals
     })
   }, [])
@@ -57,29 +57,46 @@ export const useAgents = () => {
   useEffect(() => {
     const animate = () => {
       const positions = renderPositionsRef.current
-      const targets = targetPositionsRef.current
-      const ids = Object.keys(positions)
-      const needsUpdate = ids.some((id) => {
-        const pos = positions[id]
-        const target = targets[id]
-        if (!pos || !target) return false
-        return Math.abs(pos.x - target.x) > 0.01 || Math.abs(pos.y - target.y) > 0.01
-      })
+      const wpStates = waypointStatesRef.current
+      const now = performance.now()
+      const agentIds = Object.keys(wpStates)
 
-      if (needsUpdate) {
-        animatingRef.current = true
-        for (const id of ids) {
-          const pos = positions[id]
-          const target = targets[id]
-          if (!pos || !target) continue
-          pos.x += (target.x - pos.x) * LERP_SPEED
-          pos.y += (target.y - pos.y) * LERP_SPEED
-          if (Math.abs(pos.x - target.x) < 0.01) pos.x = target.x
-          if (Math.abs(pos.y - target.y) < 0.01) pos.y = target.y
+      if (agentIds.length > 0) {
+        for (const id of agentIds) {
+          const wp = wpStates[id]
+          if (!wp || !positions[id]) continue
+
+          if (!wp.started) {
+            if (now - animationStartRef.current >= wp.startDelay) {
+              wp.started = true
+            } else {
+              continue
+            }
+          }
+
+          if (wp.currentIndex >= wp.waypoints.length - 1) continue
+
+          const from = wp.waypoints[wp.currentIndex]
+          const to = wp.waypoints[wp.currentIndex + 1]
+          const dx = to.x - from.x
+          const dy = to.y - from.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          const speedAdjusted = MOVE_SPEED / Math.max(distance, 0.5)
+
+          wp.progress += speedAdjusted
+
+          if (wp.progress >= 1) {
+            wp.progress = 0
+            wp.currentIndex++
+            positions[id] = { x: to.x, y: to.y }
+          } else {
+            positions[id] = {
+              x: from.x + dx * wp.progress,
+              y: from.y + dy * wp.progress,
+            }
+          }
         }
         setRenderTick((t) => t + 1)
-      } else {
-        animatingRef.current = false
       }
 
       requestAnimationFrame(animate)
@@ -96,24 +113,57 @@ export const useAgents = () => {
   }, [])
 
   const callMeeting = useCallback(() => {
-    const targets = targetPositionsRef.current
-    const agentIds = Object.keys(renderPositionsRef.current)
-    agentIds.forEach((id, index) => {
-      const seat = MEETING_SEATS[index % MEETING_SEATS.length]
-      targets[id] = { x: seat.x, y: seat.y }
+    const wpStates: Record<string, WaypointState> = {}
+    const positions = renderPositionsRef.current
+
+    agents.forEach((agent, index) => {
+      const route = MEETING_ROUTES[agent.name]
+      if (!route) return
+
+      const currentPos = positions[agent.id] ?? { x: agent.positionX, y: agent.positionY }
+      const fullPath = [{ x: currentPos.x, y: currentPos.y }, ...route.path]
+
+      wpStates[agent.id] = {
+        waypoints: fullPath,
+        currentIndex: 0,
+        progress: 0,
+        startDelay: index * STAGGER_DELAY_MS,
+        started: false,
+      }
     })
+
+    waypointStatesRef.current = wpStates
+    animationStartRef.current = performance.now()
     setInMeeting(true)
-  }, [])
+  }, [agents])
 
   const endMeeting = useCallback(() => {
-    const targets = targetPositionsRef.current
+    const wpStates: Record<string, WaypointState> = {}
+    const positions = renderPositionsRef.current
     const originals = originalPositionsRef.current
-    for (const id of Object.keys(targets)) {
-      const original = originals[id]
-      if (original) targets[id] = { x: original.x, y: original.y }
-    }
+
+    agents.forEach((agent, index) => {
+      const route = MEETING_ROUTES[agent.name]
+      if (!route) return
+
+      const currentPos = positions[agent.id] ?? route.seat
+      const original = originals[agent.id] ?? { x: agent.positionX, y: agent.positionY }
+      const reversePath = [...route.path].reverse()
+      const fullPath = [{ x: currentPos.x, y: currentPos.y }, ...reversePath, { x: original.x, y: original.y }]
+
+      wpStates[agent.id] = {
+        waypoints: fullPath,
+        currentIndex: 0,
+        progress: 0,
+        startDelay: index * STAGGER_DELAY_MS,
+        started: false,
+      }
+    })
+
+    waypointStatesRef.current = wpStates
+    animationStartRef.current = performance.now()
     setInMeeting(false)
-  }, [])
+  }, [agents])
 
   const getRenderPositions = useCallback((): Record<string, RenderPosition> => {
     return renderPositionsRef.current
