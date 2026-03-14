@@ -349,38 +349,126 @@ export const drawTile = (
   if (drawFn) drawFn()
 }
 
+const darkenColor = (hex: string, amount: number): string => {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount)
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount)
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount)
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+}
+
+const lightenColor = (hex: string, amount: number): string => {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount)
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount)
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount)
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+}
+
+const hairStyleForColor = (color: string): "short" | "spiky" | "long" | "curly" | "parted" => {
+  const hue = parseInt(color.slice(1, 3), 16)
+  if (hue < 50) return "short"
+  if (hue < 100) return "spiky"
+  if (hue < 150) return "long"
+  if (hue < 200) return "curly"
+  return "parted"
+}
+
+const drawHair = (
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  headTop: number,
+  style: "short" | "spiky" | "long" | "curly" | "parted",
+  hairColor: string
+) => {
+  if (style === "short") {
+    rect(ctx, cx - 3, headTop - 2, 14, 5, hairColor)
+    rect(ctx, cx - 4, headTop + 1, 3, 3, hairColor)
+    rect(ctx, cx + 9, headTop + 1, 3, 3, hairColor)
+  } else if (style === "spiky") {
+    rect(ctx, cx - 2, headTop, 12, 3, hairColor)
+    rect(ctx, cx, headTop - 3, 2, 3, hairColor)
+    rect(ctx, cx + 3, headTop - 4, 2, 4, hairColor)
+    rect(ctx, cx + 6, headTop - 3, 2, 3, hairColor)
+    rect(ctx, cx + 9, headTop - 2, 2, 2, hairColor)
+  } else if (style === "long") {
+    rect(ctx, cx - 3, headTop - 1, 14, 4, hairColor)
+    rect(ctx, cx - 4, headTop + 1, 3, 10, hairColor)
+    rect(ctx, cx + 9, headTop + 1, 3, 10, hairColor)
+  } else if (style === "curly") {
+    rect(ctx, cx - 3, headTop - 1, 14, 4, hairColor)
+    rect(ctx, cx - 4, headTop + 1, 2, 4, hairColor)
+    rect(ctx, cx + 10, headTop + 1, 2, 4, hairColor)
+    rect(ctx, cx, headTop - 3, 3, 2, hairColor)
+    rect(ctx, cx + 5, headTop - 3, 3, 2, hairColor)
+  } else {
+    rect(ctx, cx - 3, headTop - 1, 14, 4, hairColor)
+    rect(ctx, cx + 3, headTop - 2, 1, 2, hairColor)
+    rect(ctx, cx - 4, headTop + 1, 3, 5, hairColor)
+    rect(ctx, cx + 9, headTop + 1, 3, 5, hairColor)
+  }
+}
+
 const drawCharacterBody = (
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   color: string
 ) => {
-  const cx = x + 10
-  const cy = y + 4
+  const W = 20
+  const H = 28
+  const cx = x + (CANVAS_CONFIG.tileSize - W) / 2
+  const cy = y + CANVAS_CONFIG.tileSize - H - 2
 
-  rect(ctx, cx, cy - 2, 12, 4, "#00000022")
+  const glowColor = color + "33"
+  ctx.fillStyle = glowColor
+  ctx.fillRect(Math.round(cx - 2), Math.round(cy - 2), W + 4, H + 4)
 
-  rect(ctx, cx + 3, cy - 18, 6, 3, color)
+  rect(ctx, cx + 2, cy + H, W - 4, 4, "#00000033")
+  rect(ctx, cx + 1, cy + H + 2, W - 2, 2, "#00000022")
 
-  rect(ctx, cx + 3, cy - 15, 6, 4, "#f0c8a0")
-  rect(ctx, cx + 4, cy - 13, 2, 1, "#333")
-  rect(ctx, cx + 7, cy - 13, 2, 1, "#333")
+  const headW = 10
+  const headH = 10
+  const headX = cx + (W - headW) / 2
+  const headTop = cy + 2
 
-  rect(ctx, cx + 2, cy - 11, 8, 6, color)
+  const skinColor = "#f0c8a0"
+  const hairColor = darkenColor(color, 20)
+  const hairStyle = hairStyleForColor(color)
 
-  const darkerColor = darkenColor(color, 30)
-  rect(ctx, cx, cy - 11, 2, 4, darkerColor)
-  rect(ctx, cx + 10, cy - 11, 2, 4, darkerColor)
+  drawHair(ctx, headX, headTop, hairStyle, hairColor)
 
-  rect(ctx, cx + 3, cy - 5, 3, 4, "#333333")
-  rect(ctx, cx + 7, cy - 5, 3, 4, "#333333")
-}
+  rect(ctx, headX, headTop + 2, headW, headH, skinColor)
+  rect(ctx, headX, headTop + 2, headW, 1, lightenColor(skinColor, 15))
+  rect(ctx, headX, headTop + 2, 1, headH, lightenColor(skinColor, 10))
 
-const darkenColor = (hex: string, amount: number): string => {
-  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount)
-  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount)
-  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount)
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+  rect(ctx, headX + 2, headTop + 4, 2, 2, "#ffffff")
+  rect(ctx, headX + 6, headTop + 4, 2, 2, "#ffffff")
+  rect(ctx, headX + 2, headTop + 4, 1, 1, "#222222")
+  rect(ctx, headX + 6, headTop + 4, 1, 1, "#222222")
+
+  rect(ctx, headX + 3, headTop + 8, 1, 1, "#cc8866")
+  rect(ctx, headX + 4, headTop + 8, 2, 1, "#cc8866")
+  rect(ctx, headX + 6, headTop + 8, 1, 1, "#cc8866")
+
+  const torsoTop = headTop + headH + 1
+  const torsoH = 10
+  const shoulderW = W
+
+  rect(ctx, cx, torsoTop, shoulderW, torsoH, color)
+
+  const chestColor = lightenColor(color, 40)
+  rect(ctx, cx + 3, torsoTop + 1, shoulderW - 6, torsoH - 3, chestColor)
+
+  const armColor = darkenColor(color, 20)
+  rect(ctx, cx, torsoTop + 1, 3, torsoH - 2, armColor)
+  rect(ctx, cx + shoulderW - 3, torsoTop + 1, 3, torsoH - 2, armColor)
+
+  const legTop = torsoTop + torsoH
+  const legH = 7
+  rect(ctx, cx + 2, legTop, 6, legH, "#333355")
+  rect(ctx, cx + 12, legTop, 6, legH, "#333355")
+
+  rect(ctx, cx + 1, legTop + legH - 1, 7, 3, "#222")
+  rect(ctx, cx + 11, legTop + legH - 1, 7, 3, "#222")
 }
 
 const drawStatusBubble = (
@@ -389,18 +477,27 @@ const drawStatusBubble = (
   y: number,
   status: AgentStatus
 ) => {
-  const bubbleX = x + 10
-  const bubbleY = y - 20
+  const W = 20
+  const cx = x + (CANVAS_CONFIG.tileSize - W) / 2
+  const bubbleW = 20
+  const bubbleH = 14
+  const bubbleX = cx + W - 2
+  const bubbleY = y + 2
+
   const color = STATUS_COLORS[status]
   const label = STATUS_LABELS[status]
 
-  rect(ctx, bubbleX - 1, bubbleY - 1, 16, 12, "#00000088")
-  rect(ctx, bubbleX, bubbleY, 14, 10, "#222233dd")
+  rect(ctx, bubbleX - 1, bubbleY - 1, bubbleW + 2, bubbleH + 2, "#00000066")
+  rect(ctx, bubbleX, bubbleY, bubbleW, bubbleH, "#1a1a2e")
+  rect(ctx, bubbleX, bubbleY, bubbleW, 1, "#ffffff22")
+
+  rect(ctx, bubbleX + 1, bubbleY + bubbleH, 3, 3, "#1a1a2e")
+  rect(ctx, bubbleX + 2, bubbleY + bubbleH + 2, 2, 2, "#00000066")
 
   ctx.fillStyle = color
-  ctx.font = "bold 8px monospace"
+  ctx.font = "bold 9px monospace"
   ctx.textAlign = "center"
-  ctx.fillText(label, bubbleX + 7, bubbleY + 8)
+  ctx.fillText(label, bubbleX + bubbleW / 2, bubbleY + bubbleH - 3)
 }
 
 const drawNameLabel = (
@@ -408,22 +505,30 @@ const drawNameLabel = (
   x: number,
   y: number,
   name: string,
-  status: AgentStatus
+  status: AgentStatus,
+  color: string
 ) => {
-  const labelY = y + 8
-  const textWidth = name.length * 5 + 14
-  const labelX = x + 16 - textWidth / 2
+  const W = 20
+  const H = 28
+  const cx = x + (CANVAS_CONFIG.tileSize - W) / 2
+  const cy = y + CANVAS_CONFIG.tileSize - H - 2
+  const labelY = cy + H + 6
 
-  rect(ctx, labelX - 1, labelY - 1, textWidth + 2, 12, "#00000044")
-  rect(ctx, labelX, labelY, textWidth, 10, "#ffffffdd")
+  const textWidth = name.length * 6 + 16
+  const labelX = cx + W / 2 - textWidth / 2
+
+  rect(ctx, labelX - 1, labelY - 1, textWidth + 2, 13, "#00000055")
+  rect(ctx, labelX, labelY, textWidth, 11, "#ffffffee")
+  rect(ctx, labelX, labelY, textWidth, 1, "#ffffff")
 
   const dotColor = STATUS_COLORS[status]
-  rect(ctx, labelX + 2, labelY + 3, 4, 4, dotColor)
+  rect(ctx, labelX + 3, labelY + 3, 5, 5, dotColor)
+  rect(ctx, labelX + 4, labelY + 4, 3, 3, lightenColor(dotColor, 20))
 
-  ctx.fillStyle = "#222222"
-  ctx.font = "bold 7px monospace"
+  ctx.fillStyle = "#111111"
+  ctx.font = "bold 8px monospace"
   ctx.textAlign = "left"
-  ctx.fillText(name, labelX + 8, labelY + 8)
+  ctx.fillText(name, labelX + 11, labelY + 9)
 }
 
 export const drawAgent = (
@@ -436,7 +541,7 @@ export const drawAgent = (
 ) => {
   drawCharacterBody(ctx, screenX, screenY, color)
   drawStatusBubble(ctx, screenX, screenY, status)
-  drawNameLabel(ctx, screenX, screenY, name, status)
+  drawNameLabel(ctx, screenX, screenY, name, status, color)
 }
 
 export const drawRoomLabel = (

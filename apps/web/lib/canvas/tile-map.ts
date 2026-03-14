@@ -66,16 +66,21 @@ const b = "boss_office" as const
 const m = "meeting_room" as const
 const o = "open_office" as const
 
+// Open office desk positions (gridX, gridY):
+// Desk row 1 (row 3): cols 14, 17, 20, 23, 26
+// Chair row 1 (row 4): cols 14, 17, 20, 23, 26
+// Monitor row 1 (row 3): cols 15, 18, 21, 24, 27
+
 export const createOfficeMap = (): Tile[][] => [
   //  0        1        2        3        4        5        6        7        8        9        10       11       12       13       14       15       16       17       18       19       20       21       22       23       24       25       26       27       28       29
   [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G()    ], // row 0
   [G(),     CTL(b),  WT(b),   WT(b),   WT(b),   WT(b),   WT(b),   WT(b),   CTR(b),  G(1),    P(),     G(),     CTL(o),  WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   WT(o),   CTR(o),  G()    ], // row 1
   [G(2),    WL(b),   FW(b),   FW(b),   FC(b),   FC(b),   FW(b),   FW(b),   WR(b),   G(),     P(),     G(2),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(1)   ], // row 2
-  [G(),     WL(b),   FW(b),   DK(b),   FC(b),   FC(b),   BS(b),   FW(b),   WR(b),   G(),     P(),     G(),     WL(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 3
-  [G(1),    WL(b),   FW(b),   CH(b),   FC(b),   FC(b),   FW(b),   PL(b),   WR(b),   G(2),    P(),     G(1),    WL(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   PL(o),   FT(o),   WR(o),   G()    ], // row 4
+  [G(),     WL(b),   FW(b),   DK(b),   FC(b),   FC(b),   BS(b),   FW(b),   WR(b),   G(),     P(),     G(),     WL(o),   FT(o),   DK(o),   MN(o),   FT(o),   DK(o),   MN(o),   FT(o),   DK(o),   MN(o),   FT(o),   DK(o),   MN(o),   FT(o),   DK(o),   MN(o),   WR(o),   G()    ], // row 3
+  [G(1),    WL(b),   FW(b),   CH(b),   FC(b),   FC(b),   FW(b),   PL(b),   WR(b),   G(2),    P(),     G(1),    WL(o),   FT(o),   CH(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   CH(o),   FT(o),   WR(o),   G()    ], // row 4
   [G(),     WL(b),   RG(b),   RG(b),   RG(b),   FW(b),   FW(b),   FW(b),   FT(b),   HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(2)   ], // row 5
-  [G(),     CBL(b),  WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   CBR(b),  HW(),    HW(),    HW(),    WL(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   DK(o),   MN(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 6
-  [G(1),    G(),     G(),     PL("outdoor"),G(),G(),      G(1),    CF("hallway"),HW(),HW(),   HW(),    HW(),    WL(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   CH(o),   FT(o),   FT(o),   FT(o),   FT(o),   PL(o),   WR(o),   G(1)   ], // row 7
+  [G(),     CBL(b),  WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   WB(b),   CBR(b),  HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 6
+  [G(1),    G(),     G(),     PL("outdoor"),G(),G(),      G(1),    CF("hallway"),HW(),HW(),   HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   WR(o),   G(1)   ], // row 7
   [G(),     G(2),    G(),     G(),     G(),     G(),     G(),     G(),     HW(),    HW(),    HW(),    HW(),    WL(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   FT(o),   CF(o),   FT(o),   FT(o),   WR(o),   G()    ], // row 8
   [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     HW(),    HW(),    HW(),    HW(),    CBL(o),  WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   WB(o),   CBR(o),  G()    ], // row 9
   [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10
@@ -97,4 +102,12 @@ export const ROOM_LABELS: Array<{ text: string; gridX: number; gridY: number }> 
   { text: "BOSS OFFICE", gridX: 4, gridY: 1 },
   { text: "OPEN OFFICE", gridX: 20, gridY: 1 },
   { text: "MEETING ROOM", gridX: 13, gridY: 11 },
+]
+
+export const OPEN_OFFICE_DESK_POSITIONS: Array<{ gridX: number; gridY: number }> = [
+  { gridX: 14, gridY: 4 },
+  { gridX: 17, gridY: 4 },
+  { gridX: 20, gridY: 4 },
+  { gridX: 23, gridY: 4 },
+  { gridX: 26, gridY: 4 },
 ]
