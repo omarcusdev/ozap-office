@@ -25,8 +25,8 @@ type WaypointState = {
   started: boolean
 }
 
-const MOVE_SPEED = 0.02
-const STAGGER_DELAY_MS = 800
+const MOVE_SPEED = 0.06
+const STAGGER_DELAY_MS = 600
 
 export const useAgents = () => {
   const [agents, setAgents] = useState<AgentState[]>([])
