@@ -1,0 +1,15 @@
+{
+  "name": "ozap-office",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm -F @ozap-office/server dev",
+    "dev:web": "pnpm -F @ozap-office/web dev",
+    "build": "pnpm -r build",
+    "db:generate": "pnpm -F @ozap-office/server db:generate",
+    "db:migrate": "pnpm -F @ozap-office/server db:migrate",
+    "db:seed": "pnpm -F @ozap-office/server db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
