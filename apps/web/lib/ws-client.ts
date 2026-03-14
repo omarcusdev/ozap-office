@@ -2,14 +2,23 @@ import type { WsServerMessage, WsClientMessage } from "@ozap-office/shared"
 
 type MessageHandler = (message: WsServerMessage) => void
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3001"
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? ""
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
+
+const resolveWsUrl = () => {
+  if (WS_URL) return `${WS_URL}/ws?key=${API_KEY}`
+  if (typeof window === "undefined") return ""
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
+  return `${protocol}//${window.location.host}/ws?key=${API_KEY}`
+}
 
 export const createWsClient = (onMessage: MessageHandler) => {
   const state = { ws: null as WebSocket | null, reconnectTimeout: null as ReturnType<typeof setTimeout> | null }
 
   const connect = () => {
-    state.ws = new WebSocket(`${WS_URL}/ws?key=${API_KEY}`)
+    const url = resolveWsUrl()
+    if (!url) return
+    state.ws = new WebSocket(url)
 
     state.ws.onopen = () => console.log("WebSocket connected")
 

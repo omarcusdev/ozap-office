@@ -1,6 +1,6 @@
 import type { AgentConfig, AgentEvent, Approval, Meeting, MeetingMessage, TaskRun } from "@ozap-office/shared"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
 
 const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
