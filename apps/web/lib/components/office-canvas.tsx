@@ -7,7 +7,7 @@ import { CANVAS_CONFIG } from "@/lib/canvas/isometric"
 
 export const OfficeCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { agents, selectAgent } = useOffice()
+  const { agents, selectAgent, getRenderPositions } = useOffice()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -24,12 +24,19 @@ export const OfficeCanvas = () => {
     ctx.imageSmoothingEnabled = false
 
     const render = () => {
-      renderOffice(ctx, agents, CANVAS_CONFIG.baseWidth, CANVAS_CONFIG.baseHeight)
+      const positions = getRenderPositions()
+      const animatedAgents = agents.map((a) => {
+        const pos = positions[a.id]
+        return pos
+          ? { ...a, positionX: pos.x, positionY: pos.y }
+          : a
+      })
+      renderOffice(ctx, animatedAgents, CANVAS_CONFIG.baseWidth, CANVAS_CONFIG.baseHeight)
       requestAnimationFrame(render)
     }
 
     render()
-  }, [agents])
+  }, [agents, getRenderPositions])
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -42,17 +49,21 @@ export const OfficeCanvas = () => {
       const x = (e.clientX - canvasRect.left) * scaleX
       const y = (e.clientY - canvasRect.top) * scaleY
 
-      const result = hitTest(x, y, agents)
+      const positions = getRenderPositions()
+      const animatedAgents = agents.map((a) => {
+        const pos = positions[a.id]
+        return pos ? { ...a, positionX: pos.x, positionY: pos.y } : a
+      })
+
+      const result = hitTest(x, y, animatedAgents)
 
       if (result.type === "agent") {
         selectAgent(result.agentId)
-      } else if (result.type === "meeting_room") {
-        console.log("Meeting room clicked — Phase 2")
       } else {
         selectAgent(null)
       }
     },
-    [agents, selectAgent]
+    [agents, selectAgent, getRenderPositions]
   )
 
   return (

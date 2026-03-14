@@ -47,9 +47,13 @@ export const renderOffice = (
   }
 
   for (const agent of agents) {
-    const { x: sx, y: sy } = gridToScreen(agent.positionX, agent.positionY)
-    const tile = OFFICE_MAP[agent.positionY]?.[agent.positionX]
-    const isOnChair = tile?.type === "chair"
+    const sx = agent.positionX * CANVAS_CONFIG.tileSize
+    const sy = agent.positionY * CANVAS_CONFIG.tileSize
+    const gridX = Math.round(agent.positionX)
+    const gridY = Math.round(agent.positionY)
+    const isMoving = Math.abs(agent.positionX - gridX) > 0.05 || Math.abs(agent.positionY - gridY) > 0.05
+    const tile = OFFICE_MAP[gridY]?.[gridX]
+    const isOnChair = !isMoving && tile?.type === "chair"
     drawAgent(ctx, sx, sy, agent.color, agent.name, agent.status, isOnChair, tile?.room ?? null)
   }
 }
