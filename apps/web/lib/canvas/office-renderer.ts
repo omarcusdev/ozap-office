@@ -33,9 +33,22 @@ export const renderOffice = (
       if (tile.type === "empty") continue
 
       const { x: sx, y: sy } = isoToScreen(x, y)
-      drawTile(ctx, sx + offsetX, sy + offsetY, tile.type, tileWidth, tileHeight)
+      drawTile(ctx, sx + offsetX, sy + offsetY, tile.type, tileWidth, tileHeight, tile.room)
     }
   }
+
+  ctx.fillStyle = "#ffffff15"
+  ctx.font = "bold 10px monospace"
+  ctx.textAlign = "center"
+
+  const bossPos = isoToScreen(2, 1)
+  ctx.fillText("BOSS OFFICE", bossPos.x + offsetX, bossPos.y + offsetY - 24)
+
+  const meetingPos = isoToScreen(2, 7)
+  ctx.fillText("MEETING ROOM", meetingPos.x + offsetX, meetingPos.y + offsetY - 24)
+
+  const openPos = isoToScreen(9, 4)
+  ctx.fillText("OPEN OFFICE", openPos.x + offsetX, openPos.y + offsetY - 24)
 
   for (const agent of agents) {
     const { x: sx, y: sy } = isoToScreen(agent.positionX, agent.positionY)
