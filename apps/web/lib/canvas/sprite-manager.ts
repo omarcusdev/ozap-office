@@ -545,51 +545,73 @@ const drawSeatedCharacter = (
   rect(ctx, x, y, s, 1, floorEdge)
   rect(ctx, x, y, 1, s, floorEdge)
 
-  rect(ctx, x + 8, y + 14, 16, 16, "#333")
-  rect(ctx, x + 9, y + 15, 14, 14, "#444")
+  rect(ctx, x + 8, y + 16, 16, 14, "#333")
+  rect(ctx, x + 9, y + 17, 14, 12, "#444")
 
   rect(ctx, x + 10, y + 28, 2, 3, "#222")
   rect(ctx, x + 20, y + 28, 2, 3, "#222")
 
-  rect(ctx, x + 10, y + 8, 12, 8, "#333")
-  rect(ctx, x + 11, y + 9, 10, 6, "#555")
-
   const W = 18
   const cx = x + (s - W) / 2
-  const headW = 10
-  const headH = 10
-  const headX = cx + (W - headW) / 2
-  const headTop = y + 2
-
-  const skinColor = "#f0c8a0"
   const hairColor = darkenColor(color, 20)
   const hairStyle = hairStyleForColor(color)
 
-  drawHair(ctx, headX - 1, headTop - 1, hairStyle, hairColor)
+  const headW = 12
+  const headH = 10
+  const headX = cx + (W - headW) / 2
+  const headTop = y + 4
 
-  rect(ctx, headX, headTop + 1, headW, headH, skinColor)
-  rect(ctx, headX, headTop + 1, headW, 1, lightenColor(skinColor, 15))
+  rect(ctx, headX, headTop, headW, headH, hairColor)
+  rect(ctx, headX + 1, headTop + 1, headW - 2, headH - 2, darkenColor(hairColor, 10))
 
-  rect(ctx, headX + 2, headTop + 3, 2, 2, "#ffffff")
-  rect(ctx, headX + 6, headTop + 3, 2, 2, "#ffffff")
-  rect(ctx, headX + 2, headTop + 3, 1, 1, "#222222")
-  rect(ctx, headX + 6, headTop + 3, 1, 1, "#222222")
+  if (hairStyle === "spiky") {
+    rect(ctx, headX + 1, headTop - 3, 2, 3, hairColor)
+    rect(ctx, headX + 4, headTop - 4, 2, 4, hairColor)
+    rect(ctx, headX + 7, headTop - 3, 2, 3, hairColor)
+    rect(ctx, headX + 10, headTop - 2, 2, 2, hairColor)
+  } else if (hairStyle === "long") {
+    rect(ctx, headX - 1, headTop, 2, headH + 2, hairColor)
+    rect(ctx, headX + headW - 1, headTop, 2, headH + 2, hairColor)
+    rect(ctx, headX, headTop - 1, headW, 2, hairColor)
+  } else if (hairStyle === "curly") {
+    rect(ctx, headX + 1, headTop - 2, 3, 2, hairColor)
+    rect(ctx, headX + 5, headTop - 3, 3, 3, hairColor)
+    rect(ctx, headX + 9, headTop - 2, 3, 2, hairColor)
+  } else if (hairStyle === "parted") {
+    rect(ctx, headX + headW / 2 - 1, headTop - 1, 2, 1, darkenColor(hairColor, 30))
+    rect(ctx, headX - 1, headTop + 1, 2, 4, hairColor)
+    rect(ctx, headX + headW - 1, headTop + 1, 2, 4, hairColor)
+  }
 
-  rect(ctx, headX + 3, headTop + 7, 1, 1, "#cc8866")
-  rect(ctx, headX + 4, headTop + 7, 2, 1, "#cc8866")
-  rect(ctx, headX + 6, headTop + 7, 1, 1, "#cc8866")
+  const skinColor = "#e8c098"
+  rect(ctx, headX + 1, headTop + headH - 2, headW - 2, 2, skinColor)
 
-  const torsoTop = headTop + headH
+  const earColor = "#e0b888"
+  rect(ctx, headX - 1, headTop + 3, 2, 3, earColor)
+  rect(ctx, headX + headW - 1, headTop + 3, 2, 3, earColor)
+
+  const torsoTop = headTop + headH + 1
   rect(ctx, cx + 1, torsoTop, W - 2, 8, color)
-  rect(ctx, cx + 3, torsoTop + 1, W - 6, 6, lightenColor(color, 40))
+  rect(ctx, cx + 2, torsoTop + 1, W - 4, 6, darkenColor(color, 15))
 
-  rect(ctx, cx, torsoTop + 1, 2, 6, darkenColor(color, 20))
-  rect(ctx, cx + W - 2, torsoTop + 1, 2, 6, darkenColor(color, 20))
+  rect(ctx, cx + W / 2 - 1, torsoTop, 2, 8, darkenColor(color, 25))
 
-  rect(ctx, cx + 3, torsoTop + 8, 5, 5, "#333355")
-  rect(ctx, cx + W - 8, torsoTop + 8, 5, 5, "#333355")
-  rect(ctx, cx + 2, torsoTop + 12, 6, 2, "#222")
-  rect(ctx, cx + W - 8, torsoTop + 12, 6, 2, "#222")
+  const armColor = darkenColor(color, 20)
+  rect(ctx, cx, torsoTop, 3, 4, armColor)
+  rect(ctx, cx + W - 3, torsoTop, 3, 4, armColor)
+  rect(ctx, cx - 1, torsoTop - 4, 3, 5, armColor)
+  rect(ctx, cx + W - 2, torsoTop - 4, 3, 5, armColor)
+
+  rect(ctx, cx - 1, torsoTop - 5, 3, 2, skinColor)
+  rect(ctx, cx + W - 2, torsoTop - 5, 3, 2, skinColor)
+
+  rect(ctx, cx + 10, y + 8, 12, 8, "#333")
+  rect(ctx, cx + 11, y + 9, 10, 6, "#555")
+
+  rect(ctx, cx + 3, torsoTop + 8, 5, 4, "#333355")
+  rect(ctx, cx + W - 8, torsoTop + 8, 5, 4, "#333355")
+  rect(ctx, cx + 2, torsoTop + 11, 6, 2, "#222")
+  rect(ctx, cx + W - 8, torsoTop + 11, 6, 2, "#222")
 }
 
 export const drawAgent = (
