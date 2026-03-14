@@ -9,7 +9,7 @@ import { config } from "../config.js"
 
 const client = new BedrockRuntimeClient({ region: config.awsRegion })
 
-const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6-20250514-v1:0"
+const DEFAULT_MODEL = "anthropic.claude-sonnet-4-6"
 
 type ConverseInput = {
   messages: Message[]
