@@ -33,11 +33,12 @@ export const registerAgentRoutes = (server: FastifyInstance) => {
       .limit(100)
   })
 
-  server.post<{ Params: { id: string } }>("/api/agents/:id/run", async (request, reply) => {
+  server.post<{ Params: { id: string }; Body: { message?: string } }>("/api/agents/:id/run", async (request, reply) => {
     const [agent] = await db.select().from(agents).where(eq(agents.id, request.params.id))
     if (!agent) return reply.code(404).send({ error: "Agent not found" })
 
-    const taskRun = await executeAgent(agent.id, "manual")
+    const message = (request.body as any)?.message
+    const taskRun = await executeAgent(agent.id, "manual", message || undefined)
     return { taskRunId: taskRun.id }
   })
 }

@@ -49,7 +49,7 @@ export const ThoughtPanel = () => {
     if (!message.trim() || !selectedAgentId || sending) return
     setSending(true)
     try {
-      await api.triggerAgent(selectedAgentId)
+      await api.triggerAgent(selectedAgentId, message.trim())
       setMessage("")
     } catch (err) {
       console.error("Failed to send:", err)
