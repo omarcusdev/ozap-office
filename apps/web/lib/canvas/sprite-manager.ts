@@ -531,15 +531,82 @@ const drawNameLabel = (
   ctx.fillText(name, labelX + 11, labelY + 9)
 }
 
+const drawSeatedCharacter = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  color: string,
+  room: string | null
+) => {
+  const s = CANVAS_CONFIG.tileSize
+  const floorColor = room === "boss_office" ? "#c4a882" : "#d4c8a8"
+  const floorEdge = room === "boss_office" ? "#cdb892" : "#c4b898"
+  rect(ctx, x, y, s, s, floorColor)
+  rect(ctx, x, y, s, 1, floorEdge)
+  rect(ctx, x, y, 1, s, floorEdge)
+
+  rect(ctx, x + 8, y + 14, 16, 16, "#333")
+  rect(ctx, x + 9, y + 15, 14, 14, "#444")
+
+  rect(ctx, x + 10, y + 28, 2, 3, "#222")
+  rect(ctx, x + 20, y + 28, 2, 3, "#222")
+
+  rect(ctx, x + 10, y + 8, 12, 8, "#333")
+  rect(ctx, x + 11, y + 9, 10, 6, "#555")
+
+  const W = 18
+  const cx = x + (s - W) / 2
+  const headW = 10
+  const headH = 10
+  const headX = cx + (W - headW) / 2
+  const headTop = y + 2
+
+  const skinColor = "#f0c8a0"
+  const hairColor = darkenColor(color, 20)
+  const hairStyle = hairStyleForColor(color)
+
+  drawHair(ctx, headX - 1, headTop - 1, hairStyle, hairColor)
+
+  rect(ctx, headX, headTop + 1, headW, headH, skinColor)
+  rect(ctx, headX, headTop + 1, headW, 1, lightenColor(skinColor, 15))
+
+  rect(ctx, headX + 2, headTop + 3, 2, 2, "#ffffff")
+  rect(ctx, headX + 6, headTop + 3, 2, 2, "#ffffff")
+  rect(ctx, headX + 2, headTop + 3, 1, 1, "#222222")
+  rect(ctx, headX + 6, headTop + 3, 1, 1, "#222222")
+
+  rect(ctx, headX + 3, headTop + 7, 1, 1, "#cc8866")
+  rect(ctx, headX + 4, headTop + 7, 2, 1, "#cc8866")
+  rect(ctx, headX + 6, headTop + 7, 1, 1, "#cc8866")
+
+  const torsoTop = headTop + headH
+  rect(ctx, cx + 1, torsoTop, W - 2, 8, color)
+  rect(ctx, cx + 3, torsoTop + 1, W - 6, 6, lightenColor(color, 40))
+
+  rect(ctx, cx, torsoTop + 1, 2, 6, darkenColor(color, 20))
+  rect(ctx, cx + W - 2, torsoTop + 1, 2, 6, darkenColor(color, 20))
+
+  rect(ctx, cx + 3, torsoTop + 8, 5, 5, "#333355")
+  rect(ctx, cx + W - 8, torsoTop + 8, 5, 5, "#333355")
+  rect(ctx, cx + 2, torsoTop + 12, 6, 2, "#222")
+  rect(ctx, cx + W - 8, torsoTop + 12, 6, 2, "#222")
+}
+
 export const drawAgent = (
   ctx: CanvasRenderingContext2D,
   screenX: number,
   screenY: number,
   color: string,
   name: string,
-  status: AgentStatus
+  status: AgentStatus,
+  seated: boolean = false,
+  room: string | null = null
 ) => {
-  drawCharacterBody(ctx, screenX, screenY, color)
+  if (seated) {
+    drawSeatedCharacter(ctx, screenX, screenY, color, room)
+  } else {
+    drawCharacterBody(ctx, screenX, screenY, color)
+  }
   drawStatusBubble(ctx, screenX, screenY, status)
   drawNameLabel(ctx, screenX, screenY, name, status, color)
 }

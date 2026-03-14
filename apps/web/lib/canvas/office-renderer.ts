@@ -25,10 +25,16 @@ export const renderOffice = (
 ) => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
+  const agentPositions = new Set(
+    agents.map((a) => `${a.positionX},${a.positionY}`)
+  )
+
   for (let y = 0; y < GRID.height; y++) {
     for (let x = 0; x < GRID.width; x++) {
       const tile = OFFICE_MAP[y][x]
       if (tile.type === "empty") continue
+
+      if (tile.type === "chair" && agentPositions.has(`${x},${y}`)) continue
 
       const { x: sx, y: sy } = gridToScreen(x, y)
       drawTile(ctx, sx, sy, tile.type, tile.room, tile.variant)
@@ -42,7 +48,9 @@ export const renderOffice = (
 
   for (const agent of agents) {
     const { x: sx, y: sy } = gridToScreen(agent.positionX, agent.positionY)
-    drawAgent(ctx, sx, sy, agent.color, agent.name, agent.status)
+    const tile = OFFICE_MAP[agent.positionY]?.[agent.positionX]
+    const isOnChair = tile?.type === "chair"
+    drawAgent(ctx, sx, sy, agent.color, agent.name, agent.status, isOnChair, tile?.room ?? null)
   }
 }
 
