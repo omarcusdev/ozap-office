@@ -290,6 +290,15 @@ const drawRug = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
   rect(ctx, x + 2, y + 2, 1, s - 4, "#aa6060")
 }
 
+const drawTable = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  const s = CANVAS_CONFIG.tileSize
+  rect(ctx, x, y, s, s, "#6a4a2a")
+  rect(ctx, x + 1, y + 1, s - 2, s - 2, "#8b6840")
+  rect(ctx, x + 2, y + 2, s - 4, s - 4, "#9a7850")
+  rect(ctx, x + 2, y + 2, s - 4, 1, "#aa8860")
+  rect(ctx, x + 2, y + 2, 1, s - 4, "#aa8860")
+}
+
 const drawCoffeeMachine = (ctx: CanvasRenderingContext2D, x: number, y: number, room: string | null) => {
   const s = CANVAS_CONFIG.tileSize
   if (room === "hallway") {
@@ -340,6 +349,7 @@ export const drawTile = (
     bookshelf: () => drawBookshelf(ctx, screenX, screenY),
     whiteboard: () => drawWhiteboard(ctx, screenX, screenY),
     rug: () => drawRug(ctx, screenX, screenY),
+    table: () => drawTable(ctx, screenX, screenY),
     coffee_machine: () => drawCoffeeMachine(ctx, screenX, screenY, room ?? null),
     grass: () => drawGrass(ctx, screenX, screenY, variant ?? 0),
     path: () => drawPath(ctx, screenX, screenY),
