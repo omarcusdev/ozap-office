@@ -10,4 +10,6 @@ export const config = {
   awsRegion: process.env.AWS_REGION ?? "us-east-1",
   port: Number(process.env.PORT ?? 3001),
   corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
+  caktoClientId: process.env.CAKTO_CLIENT_ID ?? "",
+  caktoClientSecret: process.env.CAKTO_CLIENT_SECRET ?? "",
 }
