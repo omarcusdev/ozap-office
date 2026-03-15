@@ -3,6 +3,7 @@ import { db } from "../db/client.js"
 import { agents, events } from "../db/schema.js"
 import { eq, gt, and } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
+import { eventBus } from "../events/event-bus.js"
 
 export const registerAgentRoutes = (server: FastifyInstance) => {
   server.get("/api/agents", async () => {
@@ -40,5 +41,17 @@ export const registerAgentRoutes = (server: FastifyInstance) => {
     const message = (request.body as any)?.message
     const taskRun = await executeAgent(agent.id, "manual", message || undefined)
     return { taskRunId: taskRun.id }
+  })
+
+  server.post<{ Params: { id: string } }>("/api/agents/:id/read", async (request, reply) => {
+    const [agent] = await db.select().from(agents).where(eq(agents.id, request.params.id))
+    if (!agent) return reply.code(404).send({ error: "Agent not found" })
+
+    if (agent.status === "has_report") {
+      await db.update(agents).set({ status: "idle", updatedAt: new Date() }).where(eq(agents.id, agent.id))
+      eventBus.emit("agentStatus", { agentId: agent.id, status: "idle" })
+    }
+
+    return { status: "ok" }
   })
 }
