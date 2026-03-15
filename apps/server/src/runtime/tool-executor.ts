@@ -1,10 +1,14 @@
 import type { ToolDefinition } from "@ozap-office/shared"
 import { executeLeaderTool } from "../tools/leader.js"
+import { executeFinanceTool } from "../tools/finance.js"
 
 type ToolResult = {
   content: string
   isError?: boolean
 }
+
+const LEADER_TOOLS = ["askAgent", "getAgentHistory", "delegateTask"]
+const FINANCE_TOOLS = ["getOrders", "getProducts", "getRevenueSummary"]
 
 export const executeTool = async (
   agentId: string,
@@ -13,9 +17,12 @@ export const executeTool = async (
   availableTools: ToolDefinition[]
 ): Promise<ToolResult> => {
   try {
-    const leaderToolNames = ["askAgent", "getAgentHistory", "delegateTask"]
-    if (leaderToolNames.includes(toolName)) {
+    if (LEADER_TOOLS.includes(toolName)) {
       return executeLeaderTool(toolName, toolInput)
+    }
+
+    if (FINANCE_TOOLS.includes(toolName)) {
+      return executeFinanceTool(toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }
