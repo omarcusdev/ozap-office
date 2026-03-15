@@ -2,6 +2,16 @@
 
 import { useOffice } from "@/app/providers"
 
+const StatusDot = ({ count, label, color }: { count: number; label: string; color: string }) => (
+  <div className="flex items-center gap-2">
+    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+    <span className="font-mono text-[11px]">
+      <span style={{ color }}>{count}</span>
+      <span className="text-mute ml-1">{label}</span>
+    </span>
+  </div>
+)
+
 export const StatusBar = () => {
   const { agents } = useOffice()
 
@@ -17,11 +27,11 @@ export const StatusBar = () => {
   )
 
   return (
-    <div className="h-10 bg-gray-900 border-t border-white/10 flex items-center px-4 gap-6 text-xs">
-      <span className="text-green-400">● {counts.working} working</span>
-      <span className="text-yellow-400">● {counts.waiting} waiting approval</span>
-      <span className="text-red-400">● {counts.error} error</span>
-      <span className="text-gray-400">● {counts.idle} idle</span>
+    <div className="h-9 bg-surface border-t border-edge flex items-center px-5 gap-6">
+      <StatusDot count={counts.working} label="active" color="var(--color-sage)" />
+      <StatusDot count={counts.waiting} label="pending" color="var(--color-ember)" />
+      <StatusDot count={counts.error} label="errors" color="var(--color-coral)" />
+      <StatusDot count={counts.idle} label="idle" color="var(--color-mute)" />
     </div>
   )
 }

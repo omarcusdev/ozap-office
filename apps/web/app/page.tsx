@@ -11,10 +11,10 @@ const MeetingButton = () => {
   return (
     <button
       onClick={inMeeting ? endMeeting : callMeeting}
-      className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
+      className={`px-4 py-1.5 text-[11px] font-semibold tracking-widest uppercase transition-all duration-200 rounded-sm ${
         inMeeting
-          ? "bg-red-600 hover:bg-red-500 text-white"
-          : "bg-amber-600 hover:bg-amber-500 text-white"
+          ? "bg-coral/15 text-coral border border-coral/30 hover:bg-coral/25"
+          : "bg-gold/10 text-gold border border-gold/25 hover:bg-gold/20"
       }`}
     >
       {inMeeting ? "End Meeting" : "Call Meeting"}
@@ -23,20 +23,23 @@ const MeetingButton = () => {
 }
 
 const OfficeContent = () => (
-  <div className="h-screen flex flex-col bg-gray-950">
-    <header className="h-12 bg-gray-900/80 border-b border-white/10 flex items-center px-4 backdrop-blur">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-xs font-bold">O</div>
-        <h1 className="text-sm font-bold tracking-tight">ozap-office</h1>
+  <div className="h-screen flex flex-col bg-canvas">
+    <header className="h-14 bg-surface/90 border-b border-edge flex items-center px-5 backdrop-blur-sm">
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 bg-gold rounded-sm flex items-center justify-center text-xs font-bold text-canvas">
+          O
+        </div>
+        <h1 className="text-[15px] font-semibold tracking-tight">
+          ozap<span className="text-mute">.</span>office
+        </h1>
       </div>
-      <div className="ml-4">
+      <div className="ml-auto">
         <MeetingButton />
       </div>
-      <div className="ml-auto text-xs text-gray-500">AI Agent Team</div>
     </header>
 
     <div className="flex-1 flex overflow-hidden">
-      <div className="flex-1 flex items-center justify-center bg-[#0a0a14]">
+      <div className="flex-1 flex items-center justify-center bg-canvas">
         <OfficeCanvas />
       </div>
       <ThoughtPanel />
