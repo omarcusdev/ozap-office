@@ -45,6 +45,12 @@ export const ThoughtPanel = () => {
     }
   }, [events])
 
+  useEffect(() => {
+    if (selectedAgent?.status === "has_report" && selectedAgentId) {
+      api.markAgentRead(selectedAgentId).catch(console.error)
+    }
+  }, [selectedAgentId, selectedAgent?.status])
+
   const handleSend = async () => {
     if (!message.trim() || !selectedAgentId || sending) return
     setSending(true)
