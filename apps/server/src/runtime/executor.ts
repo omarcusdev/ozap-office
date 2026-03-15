@@ -90,7 +90,8 @@ export const executeAgent = async (
     await emitEvent(agentId, taskRun.id, "error", errorMessage)
   }
 
-  await updateAgentStatus(agentId, "idle")
+  const finalStatus = trigger === "cron" ? "has_report" : "idle"
+  await updateAgentStatus(agentId, finalStatus)
   return taskRun
 }
 
