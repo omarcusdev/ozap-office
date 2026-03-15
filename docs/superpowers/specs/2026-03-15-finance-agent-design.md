@@ -234,7 +234,7 @@ Add `"has_report"` to the `AgentStatus` TypeScript union type in `packages/share
 
 In `apps/web/lib/canvas/sprite-manager.ts`:
 - Add `"has_report"` entry to `STATUS_COLORS` table (orange: `#ffb86c`)
-- Add `"has_report"` entry to `STATUS_LABELS` table (label: `"report"`)
+- Add `"has_report"` entry to `STATUS_LABELS` table (label: `"NEW"`)
 - Additionally, draw a small pulsating dot above the agent's head when status is `"has_report"` — this is rendered **in addition to** the normal status bubble, not as a replacement. Pulsation via opacity oscillation using `Math.sin(Date.now() / 300)`
 
 ### Read Receipt
