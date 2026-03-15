@@ -18,7 +18,7 @@ export const startScheduler = () => {
       cron.schedule(agent.schedule, async () => {
         console.log(`Cron triggered for ${agent.name}`)
         try {
-          await executeAgent(agent.id, "cron")
+          await executeAgent(agent.id, "cron", agent.cronPrompt ?? undefined)
         } catch (error) {
           console.error(`Cron execution failed for ${agent.name}:`, error)
         }
