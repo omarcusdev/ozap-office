@@ -1,4 +1,4 @@
-export const AGENT_STATUSES = ["idle", "working", "thinking", "waiting", "meeting", "error"] as const
+export const AGENT_STATUSES = ["idle", "working", "thinking", "waiting", "meeting", "error", "has_report"] as const
 
 export const EVENT_TYPES = [
   "thinking",

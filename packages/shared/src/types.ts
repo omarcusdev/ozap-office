@@ -1,4 +1,4 @@
-export type AgentStatus = "idle" | "working" | "thinking" | "waiting" | "meeting" | "error"
+export type AgentStatus = "idle" | "working" | "thinking" | "waiting" | "meeting" | "error" | "has_report"
 
 export type AgentConfig = {
   id: string
@@ -7,6 +7,7 @@ export type AgentConfig = {
   systemPrompt: string
   tools: ToolDefinition[]
   schedule: string | null
+  cronPrompt: string | null
   color: string
   position: { x: number; y: number }
   status: AgentStatus
