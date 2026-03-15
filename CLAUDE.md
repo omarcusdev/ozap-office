@@ -121,6 +121,7 @@ AWS_PROFILE=ozapgpt aws ssm send-command \
 
 ## Key Conventions
 
+- No Vercel/Amplify — both frontend and backend run on the same EC2. Vercel was tried but abandoned due to mixed content (HTTPS Vercel → HTTP EC2 API blocked by browsers). Same-origin via Nginx avoids this.
 - All API routes are prefixed with `/api/` and authenticated via `x-api-key` header
 - WebSocket connects at `/ws?key=<api-key>`
 - Agent status lifecycle: `idle` → `working`/`thinking` → `idle` (or `has_report` after cron, `error` on failure)
