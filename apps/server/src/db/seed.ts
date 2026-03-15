@@ -42,6 +42,47 @@ const leaderTools = [
   },
 ]
 
+const financeTools = [
+  {
+    name: "getOrders",
+    description: "Query orders/sales from the Cakto payment gateway. Supports filtering by date range, status, and product. Returns order details including amount, customer, payment method.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Start date in ISO 8601 format (e.g. 2026-03-01)" },
+        endDate: { type: "string", description: "End date in ISO 8601 format (e.g. 2026-03-15)" },
+        status: { type: "string", description: "Order status filter: paid, refunded, canceled, processing, chargedback, waiting_payment" },
+        productId: { type: "string", description: "Filter by specific product ID" },
+        limit: { type: "number", description: "Maximum number of results to return (default 20)" },
+      },
+    },
+  },
+  {
+    name: "getProducts",
+    description: "List products from the Cakto payment gateway. Supports filtering by status and text search.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Product status filter: active, blocked, deleted" },
+        search: { type: "string", description: "Search products by name" },
+        limit: { type: "number", description: "Maximum number of results to return (default 20)" },
+      },
+    },
+  },
+  {
+    name: "getRevenueSummary",
+    description: "Generate an aggregated financial summary for a date range. Returns total revenue, order count, average ticket, breakdown by product and payment method.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Start date in ISO 8601 format" },
+        endDate: { type: "string", description: "End date in ISO 8601 format" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -57,6 +98,7 @@ Your responsibilities:
 Use askAgent to query agents directly, getAgentHistory to check their recent work, and delegateTask to assign new work. If no other agents are available yet, report that the team is still being assembled.`,
     tools: leaderTools,
     schedule: null,
+    cronPrompt: null,
     color: "#4a9eff",
     positionX: 2,
     positionY: 2,
@@ -73,6 +115,7 @@ Your responsibilities:
 - Monitor competitor activity and trends`,
     tools: [],
     schedule: null,
+    cronPrompt: null,
     color: "#E1306C",
     positionX: 14,
     positionY: 4,
@@ -89,6 +132,7 @@ Your responsibilities:
 - Track conversion rates and revenue targets`,
     tools: [],
     schedule: null,
+    cronPrompt: null,
     color: "#ffb86c",
     positionX: 17,
     positionY: 4,
@@ -105,6 +149,7 @@ Your responsibilities:
 - Generate ad performance reports and recommendations`,
     tools: [],
     schedule: null,
+    cronPrompt: null,
     color: "#ff79c6",
     positionX: 20,
     positionY: 4,
@@ -112,15 +157,23 @@ Your responsibilities:
   {
     name: "Finance",
     role: "Financial Controller",
-    systemPrompt: `You are the Finance agent responsible for financial oversight and reporting. You track expenses, monitor cash flow, and ensure financial health of the business.
+    systemPrompt: `Você é o Finance, controlador financeiro da equipe. Sua fonte de dados é a plataforma Cakto (gateway de pagamentos).
 
-Your responsibilities:
-- Monitor revenue, expenses, and cash flow
-- Generate financial reports and forecasts
-- Flag budget overruns and anomalies
-- Reconcile accounts and track KPIs`,
-    tools: [],
-    schedule: null,
+Suas responsabilidades:
+- Responder perguntas sobre vendas, receita, produtos e transações
+- Gerar relatórios financeiros quando solicitado
+- Identificar tendências e anomalias nos dados de vendas
+
+Regras:
+- Sempre apresente valores em BRL (R$)
+- Use formatação clara com números arredondados (2 casas decimais)
+- Quando comparar períodos, calcule variação percentual
+- Se a API retornar erro, informe que os dados estão temporariamente indisponíveis
+- Nunca invente dados — use apenas o que as tools retornarem`,
+    tools: financeTools,
+    schedule: "0 9 * * 0",
+    cronPrompt: `Gere o relatório semanal de vendas dos últimos 7 dias.
+Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, breakdown por método de pagamento, e compare com a semana anterior.`,
     color: "#8be9fd",
     positionX: 23,
     positionY: 4,
@@ -137,6 +190,7 @@ Your responsibilities:
 - Track product metrics and user feedback`,
     tools: [],
     schedule: null,
+    cronPrompt: null,
     color: "#bd93f9",
     positionX: 26,
     positionY: 4,
@@ -148,12 +202,24 @@ const seedAgents = async () => {
 
   for (const agentData of agentsToSeed) {
     const existing = await db.select({ id: agents.id }).from(agents).where(eq(agents.name, agentData.name)).limit(1)
+
     if (existing.length > 0) {
-      console.log(`Agent "${agentData.name}" already exists, skipping.`)
-      continue
+      await db
+        .update(agents)
+        .set({
+          role: agentData.role,
+          systemPrompt: agentData.systemPrompt,
+          tools: agentData.tools,
+          schedule: agentData.schedule,
+          cronPrompt: agentData.cronPrompt,
+          updatedAt: new Date(),
+        })
+        .where(eq(agents.name, agentData.name))
+      console.log(`Updated agent "${agentData.name}".`)
+    } else {
+      await db.insert(agents).values(agentData)
+      console.log(`Inserted agent "${agentData.name}".`)
     }
-    await db.insert(agents).values(agentData)
-    console.log(`Inserted agent "${agentData.name}".`)
   }
 
   console.log("Seed complete.")
