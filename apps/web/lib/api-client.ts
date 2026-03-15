@@ -35,4 +35,6 @@ export const api = {
   getMeetingMessages: (id: string) => request<MeetingMessage[]>(`/api/meetings/${id}/messages`),
   sendMeetingMessage: (id: string, content: string) =>
     request<{ userMessage: MeetingMessage; leaderResponse: string }>(`/api/meetings/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+  markAgentRead: (id: string) =>
+    request<{ status: string }>(`/api/agents/${id}/read`, { method: "POST" }),
 }
