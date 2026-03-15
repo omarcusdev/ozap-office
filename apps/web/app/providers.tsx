@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useCallback, useState, type ReactNode } from "react"
 import { useWebSocket } from "@/lib/use-websocket"
-import { useAgents, type RenderPosition } from "@/lib/use-agents"
+import { useAgents, type RenderAgent } from "@/lib/use-agents"
 import { useEvents } from "@/lib/use-events"
 import type { WsServerMessage, AgentEvent } from "@ozap-office/shared"
 
@@ -15,7 +15,7 @@ type OfficeContextType = {
   inMeeting: boolean
   callMeeting: () => void
   endMeeting: () => void
-  getRenderPositions: () => Record<string, RenderPosition>
+  getRenderPositions: () => Record<string, RenderAgent>
 }
 
 const OfficeContext = createContext<OfficeContextType | null>(null)

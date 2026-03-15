@@ -5,7 +5,7 @@ import { gridToScreen, CANVAS_CONFIG } from "./coordinates"
 import { getCachedSprite, getPlaceholderSprite, SPRITE_SCALE } from "./sprite-cache"
 import { colorizeSprite, ROOM_FLOOR_COLORS, WALL_COLOR } from "./colorize"
 
-export type AnimationType = "walk" | "typing" | "reading"
+export type AnimationType = "idle" | "walk" | "typing" | "reading"
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
   idle: "#888888",
@@ -138,6 +138,11 @@ const resolveCharacterFrame = (
 ): SpriteData | null => {
   const charSprites = assets.characters[paletteIndex]
   if (!charSprites) return null
+
+  if (animation === "idle") {
+    const idleFrames = charSprites.walk[direction]
+    return idleFrames?.[0] ?? null
+  }
 
   const animGroup = charSprites[animation]
   if (!animGroup) return null
