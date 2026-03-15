@@ -3,7 +3,7 @@
 import { useRef, useEffect, useCallback } from "react"
 import { renderOffice, hitTest } from "@/lib/canvas/office-renderer"
 import { useOffice } from "@/app/providers"
-import { CANVAS_CONFIG } from "@/lib/canvas/isometric"
+import { CANVAS_CONFIG } from "@/lib/canvas/coordinates"
 
 export const OfficeCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
