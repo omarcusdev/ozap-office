@@ -8,6 +8,7 @@ export const agents = pgTable("agents", {
   systemPrompt: text("system_prompt").notNull(),
   tools: jsonb("tools").notNull().default(sql`'[]'`),
   schedule: text("schedule"),
+  cronPrompt: text("cron_prompt"),
   color: text("color").notNull(),
   positionX: integer("position_x").notNull(),
   positionY: integer("position_y").notNull(),
