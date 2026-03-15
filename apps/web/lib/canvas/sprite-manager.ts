@@ -8,6 +8,7 @@ const STATUS_COLORS: Record<AgentStatus, string> = {
   waiting: "#ffb86c",
   meeting: "#bd93f9",
   error: "#ff5555",
+  has_report: "#ffb86c",
 }
 
 const STATUS_LABELS: Record<AgentStatus, string> = {
@@ -17,6 +18,7 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
   waiting: "!",
   meeting: ">>",
   error: "X",
+  has_report: "NEW",
 }
 
 const GRASS_COLORS = ["#5a8c3a", "#4e7d32", "#66994a"]
@@ -641,6 +643,16 @@ export const drawAgent = (
   }
   drawStatusBubble(ctx, screenX, screenY, status)
   drawNameLabel(ctx, screenX, screenY, name, status, color)
+
+  if (status === "has_report") {
+    const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7
+    const dotX = screenX + CANVAS_CONFIG.tileSize / 2 - 3
+    const dotY = screenY - 4
+    ctx.globalAlpha = pulse
+    rect(ctx, dotX, dotY, 6, 6, "#ffb86c")
+    rect(ctx, dotX + 1, dotY + 1, 4, 4, "#ffd090")
+    ctx.globalAlpha = 1
+  }
 }
 
 export const drawRoomLabel = (
