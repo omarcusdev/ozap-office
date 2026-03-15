@@ -79,18 +79,19 @@ export const executeAgent = async (
     messages.push({ role: "user", content: [{ text: "Execute your scheduled task." }] })
   }
 
-  try {
-    await runAgenticLoop(agent, taskRun.id, messages, agentTools, bedrockTools)
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    await db
-      .update(taskRuns)
-      .set({ status: "failed", output: { error: errorMessage }, completedAt: new Date() })
-      .where(eq(taskRuns.id, taskRun.id))
-    await emitEvent(agentId, taskRun.id, "error", errorMessage)
-  }
+  const failed = await runAgenticLoop(agent, taskRun.id, messages, agentTools, bedrockTools)
+    .then(() => false)
+    .catch(async (error) => {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      await db
+        .update(taskRuns)
+        .set({ status: "failed", output: { error: errorMessage }, completedAt: new Date() })
+        .where(eq(taskRuns.id, taskRun.id))
+      await emitEvent(agentId, taskRun.id, "error", errorMessage)
+      return true
+    })
 
-  const finalStatus = trigger === "cron" ? "has_report" : "idle"
+  const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
   await updateAgentStatus(agentId, finalStatus)
   return taskRun
 }

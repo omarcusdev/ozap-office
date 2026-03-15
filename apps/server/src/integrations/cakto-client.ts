@@ -58,7 +58,7 @@ type TokenState = {
 const CAKTO_BASE_URL = "https://api.cakto.com.br"
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000
 
-const tokenState: { current: TokenState | null } = { current: null }
+const tokenPromise: { current: Promise<TokenState> | null } = { current: null }
 
 const assertCredentials = () => {
   if (!config.caktoClientId || !config.caktoClientSecret) {
@@ -90,11 +90,22 @@ const fetchToken = async (): Promise<TokenState> => {
   }
 }
 
-const getValidToken = async (): Promise<string> => {
-  if (!tokenState.current || Date.now() >= tokenState.current.expiresAt - TOKEN_REFRESH_MARGIN_MS) {
-    tokenState.current = await fetchToken()
+const isTokenExpired = async (): Promise<boolean> => {
+  if (!tokenPromise.current) return true
+  try {
+    const state = await tokenPromise.current
+    return Date.now() >= state.expiresAt - TOKEN_REFRESH_MARGIN_MS
+  } catch {
+    return true
   }
-  return tokenState.current.accessToken
+}
+
+const getValidToken = async (): Promise<string> => {
+  if (await isTokenExpired()) {
+    tokenPromise.current = fetchToken()
+  }
+  const state = await tokenPromise.current!
+  return state.accessToken
 }
 
 const caktoRequest = async <T>(path: string, retried = false): Promise<T> => {
@@ -108,7 +119,7 @@ const caktoRequest = async <T>(path: string, retried = false): Promise<T> => {
   })
 
   if (response.status === 401 && !retried) {
-    tokenState.current = null
+    tokenPromise.current = null
     return caktoRequest<T>(path, true)
   }
 
@@ -146,9 +157,6 @@ export const fetchOrders = async (filters: OrderFilters = {}): Promise<Paginated
 
 export const fetchProducts = async (filters: ProductFilters = {}): Promise<PaginatedResponse<CaktoProduct>> =>
   caktoRequest<PaginatedResponse<CaktoProduct>>(`/public_api/products/?${buildProductQuery(filters)}`)
-
-export const fetchOrderById = async (orderId: string): Promise<CaktoOrder> =>
-  caktoRequest<CaktoOrder>(`/public_api/orders/${orderId}/`)
 
 const fetchOrderPage = async (filters: OrderFilters, page: number, pageSize: number): Promise<PaginatedResponse<CaktoOrder>> =>
   fetchOrders({ ...filters, limit: pageSize, page })
