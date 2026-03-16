@@ -50,7 +50,7 @@ export const ROOM_FLOOR_COLORS: Record<string, { floorIndex: number; color: Colo
   open_office: { floorIndex: 2, color: { h: 200, s: 0.1, b: 0.0, c: 0.0 } },
   meeting_room: { floorIndex: 4, color: { h: 220, s: 0.3, b: -0.1, c: 0.1 } },
   hallway: { floorIndex: 1, color: { h: 40, s: 0.15, b: 0.1, c: 0.0 } },
-  outdoor: { floorIndex: 5, color: { h: 120, s: 0.3, b: -0.1, c: 0.1 } },
+  outdoor: { floorIndex: 5, color: { h: 100, s: 0.25, b: -0.1, c: 0.15 } },
 }
 
 export const WALL_COLOR: ColorConfig = { h: 30, s: 0.25, b: 0.0, c: 0.1 }
