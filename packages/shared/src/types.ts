@@ -95,3 +95,16 @@ export type WsServerMessage =
 export type WsClientMessage =
   | { type: "subscribe"; payload: { agentId: string } }
   | { type: "unsubscribe"; payload: { agentId: string } }
+
+export type AgentMemoryType = "core" | "archival"
+
+export type AgentMemory = {
+  id: string
+  agentId: string
+  type: AgentMemoryType
+  key: string | null
+  category: string | null
+  content: string
+  createdAt: Date
+  updatedAt: Date
+}
