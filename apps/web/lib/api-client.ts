@@ -37,4 +37,8 @@ export const api = {
     request<{ userMessage: MeetingMessage; leaderResponse: string }>(`/api/meetings/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
   markAgentRead: (id: string) =>
     request<{ status: string }>(`/api/agents/${id}/read`, { method: "POST" }),
+  getLatestRun: (agentId: string) =>
+    request<TaskRun>(`/api/agents/${agentId}/latest-run`),
+  getTaskRunEvents: (agentId: string, taskRunId: string) =>
+    request<AgentEvent[]>(`/api/agents/${agentId}/events?taskRunId=${taskRunId}`),
 }
