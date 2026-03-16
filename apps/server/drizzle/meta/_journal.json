@@ -15,6 +15,13 @@
       "when": 1773540943981,
       "tag": "0001_concerned_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773630706624,
+      "tag": "0002_blushing_harpoon",
+      "breakpoints": true
     }
   ]
 }
