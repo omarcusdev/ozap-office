@@ -1,8 +1,8 @@
 import { nanoid } from "nanoid"
 import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
-import { agents, taskRuns, events, meetingMessages } from "../db/schema.js"
-import { eq } from "drizzle-orm"
+import { agents, taskRuns, events, meetingMessages, agentMemories } from "../db/schema.js"
+import { eq, and } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
 import { eventBus } from "../events/event-bus.js"
@@ -37,6 +37,18 @@ const buildBedrockTools = (tools: ToolDefinition[]) =>
     },
   })) as any[]
 
+const buildCoreMemoryBlock = async (agentId: string): Promise<string> => {
+  const memories = await db
+    .select()
+    .from(agentMemories)
+    .where(and(eq(agentMemories.agentId, agentId), eq(agentMemories.type, "core")))
+
+  if (memories.length === 0) return ""
+
+  const entries = memories.map((m) => `- ${m.key}: ${m.content}`).join("\n")
+  return `\n\n## Your Current Memory\n${entries}`
+}
+
 const extractToolUseBlocks = (content: ContentBlock[]) =>
   content.filter((block): block is ContentBlock & { toolUse: NonNullable<ContentBlock["toolUse"]> } =>
     block.toolUse !== undefined
@@ -56,6 +68,9 @@ export const executeAgent = async (
   const [agent] = await db.select().from(agents).where(eq(agents.id, agentId))
   if (!agent) throw new Error(`Agent ${agentId} not found`)
 
+  const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
+  const agentWithMemory = { ...agent, systemPrompt: agent.systemPrompt + coreMemoryBlock }
+
   const [taskRun] = await db
     .insert(taskRuns)
     .values({
@@ -69,7 +84,7 @@ export const executeAgent = async (
 
   await updateAgentStatus(agentId, "working")
 
-  const agentTools = agent.tools as ToolDefinition[]
+  const agentTools = agentWithMemory.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
 
   const messages: Message[] = []
@@ -79,7 +94,7 @@ export const executeAgent = async (
     messages.push({ role: "user", content: [{ text: "Execute your scheduled task." }] })
   }
 
-  const failed = await runAgenticLoop(agent, taskRun.id, messages, agentTools, bedrockTools)
+  const failed = await runAgenticLoop(agentWithMemory, taskRun.id, messages, agentTools, bedrockTools)
     .then(() => false)
     .catch(async (error) => {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -170,7 +185,10 @@ export const executeAgentForMeeting = async (
   const [agent] = await db.select().from(agents).where(eq(agents.id, agentId))
   if (!agent) return `Agent ${agentId} not found`
 
-  const agentTools = agent.tools as ToolDefinition[]
+  const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
+  const agentWithMemory = { ...agent, systemPrompt: agent.systemPrompt + coreMemoryBlock }
+
+  const agentTools = agentWithMemory.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
   const messages: Message[] = [{ role: "user", content: [{ text: question }] }]
 
@@ -180,7 +198,7 @@ export const executeAgentForMeeting = async (
     .returning()
 
   await updateAgentStatus(agentId, "thinking")
-  await runAgenticLoop(agent, taskRun.id, messages, agentTools, bedrockTools)
+  await runAgenticLoop(agentWithMemory, taskRun.id, messages, agentTools, bedrockTools)
   await updateAgentStatus(agentId, "idle")
 
   const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
