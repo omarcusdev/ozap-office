@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import Markdown from "react-markdown"
 import { useOffice } from "@/app/providers"
 import { api } from "@/lib/api-client"
@@ -34,34 +34,149 @@ const formatTime = (timestamp: Date) =>
     hour12: false,
   })
 
+const formatDuration = (events: AgentEvent[]) => {
+  if (events.length < 2) return ""
+  const first = new Date(events[0].timestamp).getTime()
+  const last = new Date(events[events.length - 1].timestamp).getTime()
+  const seconds = Math.round((last - first) / 1000)
+  return `${seconds}s`
+}
+
+type ConversationGroup = {
+  userMessage: string | null
+  internalEvents: AgentEvent[]
+  agentResponse: string | null
+  isProcessing: boolean
+}
+
+const groupEventsIntoConversation = (
+  events: AgentEvent[],
+  pendingMessage: string | null
+): ConversationGroup => {
+  const internalEvents = events.filter(
+    (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
+  )
+
+  const responseEvents = events.filter(
+    (e) => e.type === "message" || e.type === "completed"
+  )
+
+  const agentResponse =
+    responseEvents.length > 0
+      ? responseEvents.map((e) => e.content).join("\n\n")
+      : null
+
+  const hasTerminalEvent = events.some(
+    (e) => e.type === "completed" || e.type === "error"
+  )
+
+  const isProcessing = events.length > 0 && !hasTerminalEvent
+
+  return {
+    userMessage: pendingMessage,
+    internalEvents,
+    agentResponse,
+    isProcessing,
+  }
+}
+
 const EventItem = ({ event }: { event: AgentEvent }) => {
   const color = EVENT_COLORS[event.type] ?? "#5a5650"
 
   return (
-    <div className="py-3 px-4 ml-4" style={{ borderLeft: `2px solid ${color}` }}>
-      <div className="flex items-center gap-2.5 font-mono text-[11px]">
+    <div className="py-2 px-3" style={{ borderLeft: `2px solid ${color}` }}>
+      <div className="flex items-center gap-2 font-mono text-[10px]">
         <span className="text-sand">{formatTime(event.timestamp)}</span>
         <span style={{ color }}>{event.type}</span>
       </div>
-      <div className="text-[13px] text-cream/80 mt-1.5 leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-hr:my-2 prose-strong:text-cream prose-headings:text-cream">
-        <Markdown>{event.content}</Markdown>
+      <div className="text-[12px] text-cream/70 mt-1 leading-relaxed line-clamp-3">
+        {event.content.slice(0, 200)}
+        {event.content.length > 200 && "..."}
       </div>
     </div>
   )
 }
 
+const UserBubble = ({ message }: { message: string }) => (
+  <div className="flex justify-end px-4 py-2">
+    <div className="max-w-[85%] bg-gold/15 border border-gold/20 rounded-lg rounded-br-sm px-3.5 py-2.5">
+      <p className="text-sm text-cream leading-relaxed">{message}</p>
+    </div>
+  </div>
+)
+
+const AgentBubble = ({ content }: { content: string }) => (
+  <div className="flex justify-start px-4 py-2">
+    <div className="max-w-[90%] bg-raised border border-edge-light rounded-lg rounded-bl-sm px-3.5 py-2.5">
+      <div className="text-[13px] text-cream/90 leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-hr:my-2 prose-strong:text-cream prose-headings:text-cream">
+        <Markdown>{content}</Markdown>
+      </div>
+    </div>
+  </div>
+)
+
+const InternalDetails = ({ events }: { events: AgentEvent[] }) => {
+  const [expanded, setExpanded] = useState(false)
+  const duration = formatDuration(events)
+
+  return (
+    <div className="px-4 py-1">
+      <button
+        onClick={() => setExpanded((prev) => !prev)}
+        className="text-[11px] font-mono text-mute hover:text-sand transition-colors"
+      >
+        {expanded ? "\u25BE" : "\u25B8"} {events.length} event{events.length !== 1 ? "s" : ""}
+        {duration && ` \u00B7 ${duration}`}
+      </button>
+      {expanded && (
+        <div className="mt-1.5 ml-2 space-y-0.5">
+          {events.map((event) => (
+            <EventItem key={event.id} event={event} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const TypingIndicator = () => (
+  <div className="flex items-center gap-1.5 px-4 py-3 ml-4">
+    {[0, 1, 2].map((i) => (
+      <div
+        key={i}
+        className="w-1.5 h-1.5 rounded-full bg-sand"
+        style={{ animation: `typing 1.4s ${i * 0.2}s ease-in-out infinite` }}
+      />
+    ))}
+  </div>
+)
+
+const NewActivityPill = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gold/90 text-canvas text-xs font-medium rounded-full shadow-lg hover:bg-gold transition-colors z-10"
+  >
+    &darr; New activity
+  </button>
+)
+
 export const ThoughtPanel = () => {
   const { selectedAgentId, agents, events, selectAgent } = useOffice()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const isNearBottomRef = useRef(true)
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
+  const [showNewActivity, setShowNewActivity] = useState(false)
   const [displayedAgentId, setDisplayedAgentId] = useState<string | null>(null)
+  const previousEventsLengthRef = useRef(0)
 
   const isOpen = !!selectedAgentId
 
   useEffect(() => {
     if (selectedAgentId) {
       setDisplayedAgentId(selectedAgentId)
+      setPendingMessage(null)
     } else {
       const timer = setTimeout(() => setDisplayedAgentId(null), 300)
       return () => clearTimeout(timer)
@@ -70,11 +185,35 @@ export const ThoughtPanel = () => {
 
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  const checkNearBottom = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    isNearBottomRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 100
+    if (isNearBottomRef.current) {
+      setShowNewActivity(false)
     }
+  }, [])
+
+  useEffect(() => {
+    if (events.length > previousEventsLengthRef.current) {
+      if (isNearBottomRef.current && scrollRef.current) {
+        requestAnimationFrame(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+          }
+        })
+      } else if (previousEventsLengthRef.current > 0) {
+        setShowNewActivity(true)
+      }
+    }
+    previousEventsLengthRef.current = events.length
   }, [events])
+
+  useEffect(() => {
+    if (events.length > 0 && pendingMessage) {
+      setPendingMessage(null)
+    }
+  }, [events, pendingMessage])
 
   useEffect(() => {
     if (selectedAgent?.status === "has_report" && selectedAgentId) {
@@ -82,14 +221,32 @@ export const ThoughtPanel = () => {
     }
   }, [selectedAgentId, selectedAgent?.status])
 
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+    setShowNewActivity(false)
+  }, [])
+
   const handleSend = async () => {
-    if (!message.trim() || !selectedAgentId || sending) return
+    const trimmed = message.trim()
+    if (!trimmed || !selectedAgentId || sending) return
+
+    setPendingMessage(trimmed)
+    setMessage("")
     setSending(true)
+
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      }
+    })
+
     try {
-      await api.triggerAgent(selectedAgentId, message.trim())
-      setMessage("")
+      await api.triggerAgent(selectedAgentId, trimmed)
     } catch (err) {
       console.error("Failed to send:", err)
+      setPendingMessage(null)
     }
     setSending(false)
   }
@@ -101,6 +258,7 @@ export const ThoughtPanel = () => {
     }
   }
 
+  const conversation = groupEventsIntoConversation(events, pendingMessage)
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
 
   return (
@@ -152,19 +310,31 @@ export const ThoughtPanel = () => {
               </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto">
-              {events.length === 0 ? (
+            <div
+              ref={scrollRef}
+              onScroll={checkNearBottom}
+              className="flex-1 overflow-y-auto relative"
+            >
+              {events.length === 0 && !pendingMessage ? (
                 <div className="flex flex-col items-center justify-center h-full px-6">
                   <p className="text-sm text-mute">No activity yet</p>
                   <p className="text-xs text-mute/60 mt-1">Send a message to start</p>
                 </div>
               ) : (
-                <div className="py-2">
-                  {events.map((event) => (
-                    <EventItem key={event.id} event={event} />
-                  ))}
+                <div className="py-3 space-y-1">
+                  {conversation.userMessage && (
+                    <UserBubble message={conversation.userMessage} />
+                  )}
+                  {conversation.internalEvents.length > 0 && (
+                    <InternalDetails events={conversation.internalEvents} />
+                  )}
+                  {conversation.agentResponse && (
+                    <AgentBubble content={conversation.agentResponse} />
+                  )}
+                  {conversation.isProcessing && <TypingIndicator />}
                 </div>
               )}
+              {showNewActivity && <NewActivityPill onClick={scrollToBottom} />}
             </div>
 
             <div className="p-4 border-t border-edge">
