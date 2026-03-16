@@ -83,6 +83,59 @@ const financeTools = [
   },
 ]
 
+const memoryTools = [
+  {
+    name: "updateCoreMemory",
+    description:
+      "Upsert a key-value pair in your core memory. Core memories are always visible in your system prompt. Use this to remember important facts, preferences, or context that should persist across conversations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        key: { type: "string", description: "The memory key (e.g. 'user_preference', 'project_status')" },
+        content: { type: "string", description: "The value to store" },
+      },
+      required: ["key", "content"],
+    },
+  },
+  {
+    name: "deleteCoreMemory",
+    description: "Delete a key-value pair from your core memory. Use this to remove outdated or irrelevant information.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        key: { type: "string", description: "The memory key to delete" },
+      },
+      required: ["key"],
+    },
+  },
+  {
+    name: "saveToArchive",
+    description:
+      "Save information to your long-term archival memory. Use this for detailed notes, analysis results, or historical data that you may want to search later.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "The content to archive" },
+        category: { type: "string", description: "Optional category for organizing archived memories" },
+      },
+      required: ["content"],
+    },
+  },
+  {
+    name: "searchArchive",
+    description: "Search your archival memory for past information. Returns matching entries sorted by relevance.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query to match against archived content" },
+        category: { type: "string", description: "Optional category to filter results" },
+        limit: { type: "number", description: "Maximum number of results to return (default 10)" },
+      },
+      required: ["query"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -96,7 +149,7 @@ Your responsibilities:
 - Provide executive summaries when asked
 
 Use askAgent to query agents directly, getAgentHistory to check their recent work, and delegateTask to assign new work. If no other agents are available yet, report that the team is still being assembled.`,
-    tools: leaderTools,
+    tools: [...leaderTools, ...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#4a9eff",
@@ -113,7 +166,7 @@ Your responsibilities:
 - Track engagement metrics and follower growth
 - Suggest content ideas aligned with brand voice
 - Monitor competitor activity and trends`,
-    tools: [],
+    tools: [...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#E1306C",
@@ -130,7 +183,7 @@ Your responsibilities:
 - Identify high-value leads and opportunities
 - Generate weekly and monthly sales reports
 - Track conversion rates and revenue targets`,
-    tools: [],
+    tools: [...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#ffb86c",
@@ -147,7 +200,7 @@ Your responsibilities:
 - Monitor ROAS, CTR, and conversion metrics
 - Optimize bids and audience targeting
 - Generate ad performance reports and recommendations`,
-    tools: [],
+    tools: [...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#ff79c6",
@@ -170,7 +223,7 @@ Regras:
 - Quando comparar períodos, calcule variação percentual
 - Se a API retornar erro, informe que os dados estão temporariamente indisponíveis
 - Nunca invente dados — use apenas o que as tools retornarem`,
-    tools: financeTools,
+    tools: [...financeTools, ...memoryTools],
     schedule: "0 9 * * 0",
     cronPrompt: `Gere o relatório semanal de vendas dos últimos 7 dias.
 Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, breakdown por método de pagamento, e compare com a semana anterior.`,
@@ -188,7 +241,7 @@ Your responsibilities:
 - Define feature requirements and acceptance criteria
 - Coordinate with engineering and design on delivery
 - Track product metrics and user feedback`,
-    tools: [],
+    tools: [...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#bd93f9",
