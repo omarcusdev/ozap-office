@@ -29,7 +29,7 @@ export const useOffice = () => {
 export const OfficeProvider = ({ children }: { children: ReactNode }) => {
   const { agents, loading, updateAgentStatus, inMeeting, callMeeting, endMeeting, getRenderPositions } = useAgents()
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const { events, addEvent } = useEvents(selectedAgentId)
+  const { events, addEvent, activeTaskRunId } = useEvents(selectedAgentId)
 
   const handleWsMessage = useCallback(
     (message: WsServerMessage) => {
