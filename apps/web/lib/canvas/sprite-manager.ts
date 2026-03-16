@@ -208,7 +208,8 @@ const traverseManifestTree = (
   if (!node.members || node.members.length === 0) return null
 
   if (node.groupType === "rotation") {
-    const targetOrientation = placement.orientation ?? "front"
+    const rawOrientation = placement.orientation ?? "front"
+    const targetOrientation = rawOrientation === "side-mirror" ? "side" : rawOrientation
     const match = node.members.find((m) => m.orientation === targetOrientation)
     return traverseManifestTree(match ?? node.members[0], sprites, placement)
   }
@@ -238,7 +239,17 @@ export const drawFurniture = (
   const cached = getCachedSprite(sprite)
   const spriteHeight = cached.height
   const anchorY = sy + CANVAS_CONFIG.tileSize - spriteHeight
-  ctx.drawImage(cached, sx, anchorY)
+  const mirrored = placement.orientation === "side-mirror"
+
+  if (mirrored) {
+    ctx.save()
+    ctx.translate(sx + cached.width, anchorY)
+    ctx.scale(-1, 1)
+    ctx.drawImage(cached, 0, 0)
+    ctx.restore()
+  } else {
+    ctx.drawImage(cached, sx, anchorY)
+  }
 }
 
 const BUBBLE_OFFSET_Y = 48

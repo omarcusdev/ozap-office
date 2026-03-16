@@ -11,7 +11,7 @@ export type FurniturePlacement = {
   id: FurnitureId
   gridX: number
   gridY: number
-  orientation?: "front" | "back" | "side"
+  orientation?: "front" | "back" | "side" | "side-mirror"
   state?: "on" | "off"
 }
 
@@ -46,15 +46,15 @@ export const createOfficeMap = (): Tile[][] => [
   [G(1),    G(),     G(),     G(),     G(),     G(),     G(1),    G(),     HW(),    HW(),    HW(),    HW(),    W(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    W(o),    G(1)   ], // row 7
   [G(),     G(2),    G(),     G(),     G(),     G(),     G(),     G(),     HW(),    HW(),    HW(),    HW(),    W(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    F(o),    W(o),    G()    ], // row 8
   [G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     HW(),    HW(),    HW(),    HW(),    W(o),    F(o),    F(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    W(o),    G()    ], // row 9
-  [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10
-  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     P(),     W(m),    W(m),    W(m),    F(m),    F(m),    W(m),    W(m),    W(m),    G(2),    G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G()    ], // row 11
-  [G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(),     P(),     P(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(2),    G()    ], // row 12
-  [G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     P(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(),     G(1)   ], // row 13
-  [G(),     G(),     G(1),    G(),     G(),     G(1),    G(),     G(),     G(2),    P(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(1),    G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G()    ], // row 14
-  [G(2),    G(),     G(),     G(),     G(),     G(),     G(2),    G(),     G(),     P(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G()    ], // row 15
-  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     P(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 16
-  [G(),     G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     P(),     W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    G(1),    G(),     G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    G()    ], // row 17
-  [G(1),    G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    G(),     G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(),     G(1),    G(2),    G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G()    ], // row 18
+  [G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     P(),     P(),     HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    HW(),    G(),     G(2),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 10
+  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(1),    G(),     W(m),    W(m),    W(m),    W(m),    W(m),    F(m),    F(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    G(1),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G()    ], // row 11
+  [G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(2),    G()    ], // row 12
+  [G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(),     G(1)   ], // row 13
+  [G(),     G(),     G(1),    G(),     G(),     G(1),    G(),     G(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(1),    G()    ], // row 14
+  [G(2),    G(),     G(),     G(),     G(),     G(),     G(2),    G(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G()    ], // row 15
+  [G(),     G(1),    G(),     G(2),    G(),     G(),     G(),     G(1),    W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(1),    G(),     G(),     G(),     G(1),    G(),     G(),     G(2)   ], // row 16
+  [G(),     G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     W(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    F(m),    W(m),    G(),     G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    G()    ], // row 17
+  [G(1),    G(),     G(2),    G(),     G(),     G(),     G(),     G(1),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    W(m),    G(1),    G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G()    ], // row 18
   [G(),     G(),     G(),     G(1),    G(),     G(2),    G(),     G(),     G(2),    G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(1),    G(),     G(),     G(),     G(1),    G(),     G(),     G(),     G(2),    G(),     G(),     G(),     G(1)   ], // row 19
 ]
 
@@ -64,7 +64,7 @@ export const GRID = { width: GRID_WIDTH, height: GRID_HEIGHT }
 export const ROOM_LABELS: Array<{ text: string; gridX: number; gridY: number }> = [
   { text: "BOSS OFFICE", gridX: 4, gridY: 1 },
   { text: "OPEN OFFICE", gridX: 20, gridY: 1 },
-  { text: "MEETING ROOM", gridX: 13, gridY: 11 },
+  { text: "MEETING ROOM", gridX: 13, gridY: 12 },
 ]
 
 export const OPEN_OFFICE_DESK_POSITIONS: Array<{ gridX: number; gridY: number }> = [
@@ -82,44 +82,44 @@ export const MEETING_ROUTES: Record<string, { path: Waypoint[]; seat: Waypoint }
     path: [
       { x: 2, y: 4 }, { x: 4, y: 5 }, { x: 8, y: 5 },
       { x: 9, y: 7 }, { x: 10, y: 10 }, { x: 13, y: 11 },
-      { x: 14, y: 12 },
+      { x: 14, y: 13 },
     ],
-    seat: { x: 14, y: 12 },
+    seat: { x: 14, y: 13 },
   },
   Instagram: {
     path: [
       { x: 14, y: 5 }, { x: 13, y: 8 }, { x: 13, y: 10 },
-      { x: 12, y: 11 }, { x: 12, y: 13 },
+      { x: 13, y: 11 }, { x: 12, y: 14 },
     ],
-    seat: { x: 12, y: 13 },
+    seat: { x: 12, y: 14 },
   },
   Sales: {
     path: [
-      { x: 17, y: 5 }, { x: 14, y: 8 }, { x: 13, y: 10 },
-      { x: 15, y: 11 }, { x: 16, y: 13 },
+      { x: 17, y: 5 }, { x: 14, y: 8 }, { x: 14, y: 10 },
+      { x: 14, y: 11 }, { x: 16, y: 14 },
     ],
-    seat: { x: 16, y: 13 },
+    seat: { x: 16, y: 14 },
   },
   Ads: {
     path: [
-      { x: 20, y: 5 }, { x: 16, y: 8 }, { x: 13, y: 10 },
-      { x: 11, y: 12 }, { x: 12, y: 15 },
+      { x: 20, y: 5 }, { x: 16, y: 8 }, { x: 14, y: 10 },
+      { x: 13, y: 11 }, { x: 12, y: 16 },
     ],
-    seat: { x: 12, y: 15 },
+    seat: { x: 12, y: 16 },
   },
   Finance: {
     path: [
       { x: 23, y: 5 }, { x: 18, y: 8 }, { x: 14, y: 10 },
-      { x: 16, y: 12 }, { x: 16, y: 15 },
+      { x: 14, y: 11 }, { x: 16, y: 16 },
     ],
-    seat: { x: 16, y: 15 },
+    seat: { x: 16, y: 16 },
   },
   PM: {
     path: [
       { x: 26, y: 5 }, { x: 20, y: 8 }, { x: 14, y: 10 },
-      { x: 14, y: 12 }, { x: 14, y: 16 },
+      { x: 14, y: 11 }, { x: 14, y: 17 },
     ],
-    seat: { x: 14, y: 16 },
+    seat: { x: 14, y: 17 },
   },
 }
 
@@ -145,29 +145,22 @@ export const FURNITURE_PLACEMENTS: FurniturePlacement[] = [
   { id: "HANGING_PLANT", gridX: 18, gridY: 1 },
   { id: "CLOCK", gridX: 22, gridY: 1 },
 
-  { id: "WHITEBOARD", gridX: 11, gridY: 12 },
-  { id: "TABLE_FRONT", gridX: 13, gridY: 13 },
-  { id: "TABLE_FRONT", gridX: 14, gridY: 13 },
-  { id: "TABLE_FRONT", gridX: 15, gridY: 13 },
-  { id: "TABLE_FRONT", gridX: 13, gridY: 14 },
-  { id: "TABLE_FRONT", gridX: 14, gridY: 14 },
-  { id: "TABLE_FRONT", gridX: 15, gridY: 14 },
-  { id: "TABLE_FRONT", gridX: 13, gridY: 15 },
-  { id: "TABLE_FRONT", gridX: 14, gridY: 15 },
-  { id: "TABLE_FRONT", gridX: 15, gridY: 15 },
-  { id: "CUSHIONED_CHAIR", gridX: 13, gridY: 12, orientation: "front" },
-  { id: "CUSHIONED_CHAIR", gridX: 14, gridY: 12, orientation: "front" },
-  { id: "CUSHIONED_CHAIR", gridX: 15, gridY: 12, orientation: "front" },
-  { id: "CUSHIONED_CHAIR", gridX: 12, gridY: 13, orientation: "side" },
-  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 13, orientation: "side" },
+  { id: "WHITEBOARD", gridX: 9, gridY: 12 },
+  { id: "TABLE_FRONT", gridX: 13, gridY: 16 },
+  { id: "CUSHIONED_CHAIR", gridX: 13, gridY: 13, orientation: "front" },
+  { id: "CUSHIONED_CHAIR", gridX: 14, gridY: 13, orientation: "front" },
+  { id: "CUSHIONED_CHAIR", gridX: 15, gridY: 13, orientation: "front" },
   { id: "CUSHIONED_CHAIR", gridX: 12, gridY: 14, orientation: "side" },
-  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 14, orientation: "side" },
+  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 14, orientation: "side-mirror" },
   { id: "CUSHIONED_CHAIR", gridX: 12, gridY: 15, orientation: "side" },
-  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 15, orientation: "side" },
-  { id: "CUSHIONED_CHAIR", gridX: 13, gridY: 16, orientation: "back" },
-  { id: "CUSHIONED_CHAIR", gridX: 14, gridY: 16, orientation: "back" },
-  { id: "CUSHIONED_CHAIR", gridX: 15, gridY: 16, orientation: "back" },
-  { id: "SMALL_PAINTING", gridX: 13, gridY: 11 },
+  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 15, orientation: "side-mirror" },
+  { id: "CUSHIONED_CHAIR", gridX: 12, gridY: 16, orientation: "side" },
+  { id: "CUSHIONED_CHAIR", gridX: 16, gridY: 16, orientation: "side-mirror" },
+  { id: "CUSHIONED_CHAIR", gridX: 13, gridY: 17, orientation: "back" },
+  { id: "CUSHIONED_CHAIR", gridX: 14, gridY: 17, orientation: "back" },
+  { id: "CUSHIONED_CHAIR", gridX: 15, gridY: 17, orientation: "back" },
+  { id: "SMALL_PAINTING", gridX: 14, gridY: 11 },
+  { id: "LARGE_PLANT", gridX: 19, gridY: 12 },
 
   { id: "COFFEE", gridX: 7, gridY: 7 },
 

@@ -149,12 +149,13 @@ const loadFurnitureItem = async (name: string): Promise<{ manifest: FurnitureMan
   const sprites: Record<string, SpriteData> = {}
 
   const collectAssets = async (node: FurnitureManifest) => {
-    if (node.type === "asset" && node.file) {
+    if (node.type === "asset") {
+      const filename = node.file ?? `${node.id}.png`
       try {
-        const img = await loadImage(`${basePath}/${node.file}`)
+        const img = await loadImage(`${basePath}/${filename}`)
         sprites[node.id] = imageToSpriteData(img)
       } catch {
-        console.warn(`Missing furniture sprite: ${basePath}/${node.file}`)
+        console.warn(`Missing furniture sprite: ${basePath}/${filename}`)
       }
     }
     if (node.members) {
