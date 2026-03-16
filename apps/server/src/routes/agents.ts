@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify"
 import { db } from "../db/client.js"
-import { agents, events } from "../db/schema.js"
-import { eq, gt, and } from "drizzle-orm"
+import { agents, events, taskRuns } from "../db/schema.js"
+import { eq, gt, and, desc } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { eventBus } from "../events/event-bus.js"
 
@@ -16,15 +16,28 @@ export const registerAgentRoutes = (server: FastifyInstance) => {
     return agent
   })
 
+  server.get<{ Params: { id: string } }>("/api/agents/:id/latest-run", async (request, reply) => {
+    const [run] = await db
+      .select()
+      .from(taskRuns)
+      .where(eq(taskRuns.agentId, request.params.id))
+      .orderBy(desc(taskRuns.createdAt))
+      .limit(1)
+
+    if (!run) return reply.code(404).send({ error: "No task runs found" })
+    return run
+  })
+
   server.get<{
     Params: { id: string }
-    Querystring: { after?: string }
+    Querystring: { after?: string; taskRunId?: string }
   }>("/api/agents/:id/events", async (request) => {
     const { id } = request.params
-    const { after } = request.query
+    const { after, taskRunId } = request.query
 
     const conditions = [eq(events.agentId, id)]
     if (after) conditions.push(gt(events.timestamp, new Date(after)))
+    if (taskRunId) conditions.push(eq(events.taskRunId, taskRunId))
 
     return db
       .select()
