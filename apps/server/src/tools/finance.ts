@@ -22,6 +22,11 @@ const getOrders = async (input: Record<string, unknown>): Promise<ToolResult> =>
       paymentMethod: o.paymentMethod,
       paidAt: o.paidAt,
       createdAt: o.createdAt,
+      utmSource: o.utm_source,
+      utmMedium: o.utm_medium,
+      utmCampaign: o.utm_campaign,
+      sck: o.sck,
+      isAffiliate: Array.isArray(o.commissions) && o.commissions.some(c => c.type === "affiliate"),
     }))
 
     return { content: JSON.stringify({ count: response.count, orders }) }

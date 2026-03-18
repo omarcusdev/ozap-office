@@ -39,6 +39,19 @@ type CaktoOrder = {
   createdAt: string
   refundedAt: string | null
   chargedbackAt: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  utm_term: string | null
+  utm_content: string | null
+  sck: string | null
+  checkoutUrl: string | null
+  commissions: Array<{
+    userId: string
+    type: string
+    commissionPercentage: number
+    commissionValue: number
+  }> | null
 }
 
 type CaktoProduct = {
