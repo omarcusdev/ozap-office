@@ -136,6 +136,163 @@ const memoryTools = [
   },
 ]
 
+const adsTools = [
+  {
+    name: "getAdAccountOverview",
+    description: "Visão geral da conta de anúncios Meta (Facebook/Instagram). Retorna métricas de performance da conta como gasto, impressões, cliques, CTR, CPC, e conversões.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        dateRange: { type: "string", description: "Período predefinido: today, yesterday, last_7d, last_14d, last_28d, last_30d, last_90d, this_month, last_month" },
+      },
+    },
+  },
+  {
+    name: "listCampaigns",
+    description: "Lista todas as campanhas da conta Meta Ads. Retorna nome, status, objetivo, orçamento e métricas básicas de cada campanha.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Filtrar por status: ACTIVE, PAUSED, DELETED, ARCHIVED" },
+      },
+    },
+  },
+  {
+    name: "getCampaignInsights",
+    description: "Métricas detalhadas de uma campanha específica. Retorna impressões, cliques, CTR, CPC, gasto, conversões, ROAS, e breakdowns opcionais.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha Meta" },
+        dateRange: { type: "string", description: "Período predefinido: today, yesterday, last_7d, last_14d, last_28d, last_30d" },
+        breakdowns: { type: "string", description: "Breakdown para segmentação: age, gender, country, placement, device_platform" },
+      },
+      required: ["campaignId"],
+    },
+  },
+  {
+    name: "searchTargetingOptions",
+    description: "Busca opções de segmentação para anúncios Meta. Pesquisa interesses, comportamentos, dados demográficos ou localizações.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Termo de busca para segmentação" },
+        type: { type: "string", description: "Tipo de segmentação: interests, behaviors, demographics, geo_locations (padrão: interests)" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "createCampaign",
+    description: "Cria uma nova campanha Meta Ads. A campanha é sempre criada em status PAUSED. O orçamento é informado em BRL (reais).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Nome da campanha" },
+        objective: { type: "string", description: "Objetivo: OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT, OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION" },
+        dailyBudget: { type: "number", description: "Orçamento diário em BRL (ex: 50 para R$50/dia)" },
+      },
+      required: ["name", "objective", "dailyBudget"],
+    },
+  },
+  {
+    name: "createAdSet",
+    description: "Cria um conjunto de anúncios (ad set) dentro de uma campanha. Criado em status PAUSED com segmentação definida.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha onde criar o ad set" },
+        name: { type: "string", description: "Nome do conjunto de anúncios" },
+        targeting: {
+          type: "object",
+          description: "Objeto de segmentação Meta com geo_locations, age_min, age_max, genders, interests, behaviors etc.",
+        },
+      },
+      required: ["campaignId", "name", "targeting"],
+    },
+  },
+  {
+    name: "createAd",
+    description: "Cria um anúncio (ad) dentro de um ad set. Primeiro cria o creative e depois o anúncio vinculado. Criado em status PAUSED.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        adSetId: { type: "string", description: "ID do ad set onde criar o anúncio" },
+        name: { type: "string", description: "Nome do anúncio" },
+        headline: { type: "string", description: "Título do anúncio" },
+        text: { type: "string", description: "Texto principal do anúncio" },
+        imageUrl: { type: "string", description: "URL da imagem do anúncio" },
+        linkUrl: { type: "string", description: "URL de destino do anúncio (landing page com UTM)" },
+        pageId: { type: "string", description: "ID da página Facebook vinculada" },
+      },
+      required: ["adSetId", "name", "headline", "text", "imageUrl", "linkUrl", "pageId"],
+    },
+  },
+  {
+    name: "activateCampaign",
+    description: "Ativa uma campanha (muda status para ACTIVE). REQUER APROVAÇÃO HUMANA — esta operação não será executada automaticamente.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha para ativar" },
+      },
+      required: ["campaignId"],
+    },
+  },
+  {
+    name: "pauseCampaign",
+    description: "Pausa uma campanha ativa (muda status para PAUSED). Pode ser executada imediatamente sem aprovação.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha para pausar" },
+      },
+      required: ["campaignId"],
+    },
+  },
+  {
+    name: "updateBudget",
+    description: "Atualiza o orçamento diário de uma campanha. Reduções são executadas imediatamente. Aumentos REQUEREM APROVAÇÃO HUMANA.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha" },
+        newDailyBudget: { type: "number", description: "Novo orçamento diário em BRL" },
+        currentDailyBudget: { type: "number", description: "Orçamento diário atual em BRL (para determinar se é aumento ou redução)" },
+      },
+      required: ["campaignId", "newDailyBudget"],
+    },
+  },
+  {
+    name: "duplicateCampaign",
+    description: "Duplica uma campanha existente com novo nome. A cópia é criada em status PAUSED. Útil para testes A/B.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignId: { type: "string", description: "ID da campanha para duplicar" },
+        newName: { type: "string", description: "Nome da campanha duplicada" },
+      },
+      required: ["campaignId", "newName"],
+    },
+  },
+  {
+    name: "comparePerformance",
+    description: "Compara métricas de performance entre múltiplas campanhas lado a lado. Retorna insights de cada campanha para análise comparativa.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campaignIds: {
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de IDs de campanhas para comparar",
+        },
+        dateRange: { type: "string", description: "Período predefinido: today, yesterday, last_7d, last_14d, last_28d, last_30d" },
+      },
+      required: ["campaignIds"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -193,16 +350,50 @@ Your responsibilities:
   {
     name: "Ads",
     role: "Ads Campaign Manager",
-    systemPrompt: `You are the Ads agent responsible for managing paid advertising campaigns. You optimize ad spend, monitor campaign performance, and ensure ROI targets are met across all channels.
+    systemPrompt: `Você é o Ads, gestor de campanhas de tráfego pago da equipe. Você gerencia anúncios no Meta Ads (Facebook e Instagram).
 
-Your responsibilities:
-- Create and manage paid ad campaigns across channels
-- Monitor ROAS, CTR, and conversion metrics
-- Optimize bids and audience targeting
-- Generate ad performance reports and recommendations`,
-    tools: [...memoryTools],
-    schedule: null,
-    cronPrompt: null,
+## Catálogo de Produtos
+
+| Produto | Preço | Checkout |
+|---------|-------|----------|
+| Zap GPT (vitalício) | R$397 | https://pay.cakto.com.br/DAk1eAm |
+| oZapOnline Essencial | R$67/mês | https://pay.cakto.com.br/1bxC0RI |
+| oZapOnline com IA | R$97/mês | https://pay.cakto.com.br/F3gihIp |
+| Whitelabel | Sob consulta | — |
+
+## Suas Responsabilidades
+- Analisar performance das campanhas ativas (ROAS, CTR, CPC, CPA, conversões)
+- Criar novas campanhas segmentadas por produto
+- Otimizar campanhas existentes (ajuste de orçamento, segmentação, criativos)
+- Realizar testes A/B duplicando campanhas com variações
+- Gerar relatórios de performance com recomendações de ação
+
+## Regras de Segurança
+- Campanhas são SEMPRE criadas em status PAUSED — nunca ative automaticamente
+- Ativação de campanhas (activateCampaign) REQUER aprovação humana — informe o usuário
+- Aumento de orçamento (updateBudget quando novo > atual) REQUER aprovação humana
+- Reduções de orçamento e pausas podem ser executadas imediatamente
+- Respeite o limite diário de orçamento configurado
+- Nunca invente métricas — use apenas dados retornados pelas tools
+
+## Boas Práticas
+- Sempre analise o histórico antes de criar novas campanhas
+- Use UTM params nas URLs de destino: utm_source=meta&utm_medium=cpc&utm_campaign={nome}
+- Separe campanhas por produto para controle granular de ROAS
+- Ao criar anúncios, use as URLs de checkout corretas do catálogo acima
+- Compare performance entre campanhas antes de recomendar realocação de budget
+
+## Valores em BRL
+- Sempre apresente valores monetários em BRL (R$)
+- Orçamentos são informados em reais (ex: dailyBudget=50 significa R$50/dia)`,
+    tools: [...adsTools, ...memoryTools],
+    schedule: "0 9 * * 1",
+    cronPrompt: `Gere o relatório semanal de performance de anúncios Meta Ads.
+Analise todas as campanhas ativas e pausadas dos últimos 7 dias.
+Inclua: gasto total, impressões, cliques, CTR, CPC, conversões, ROAS por campanha.
+Compare com a semana anterior quando possível.
+Identifique as campanhas com melhor e pior performance.
+Recomende ações: pausar campanhas com ROAS baixo, aumentar budget das melhores, sugestões de otimização.`,
     color: "#ff79c6",
     positionX: 20,
     positionY: 4,
