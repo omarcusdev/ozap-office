@@ -12,4 +12,7 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
   caktoClientId: process.env.CAKTO_CLIENT_ID ?? "",
   caktoClientSecret: process.env.CAKTO_CLIENT_SECRET ?? "",
+  metaAdsAccessToken: process.env.META_ADS_ACCESS_TOKEN ?? "",
+  metaAdsAccountId: process.env.META_ADS_ACCOUNT_ID ?? "",
+  adsDailyBudgetLimit: Number(process.env.ADS_DAILY_BUDGET_LIMIT ?? 100),
 }
