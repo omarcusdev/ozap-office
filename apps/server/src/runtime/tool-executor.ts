@@ -2,6 +2,7 @@ import type { ToolDefinition } from "@ozap-office/shared"
 import { executeLeaderTool } from "../tools/leader.js"
 import { executeFinanceTool } from "../tools/finance.js"
 import { executeMemoryTool } from "../tools/memory.js"
+import { executeAdsTool } from "../tools/ads.js"
 
 type ToolResult = {
   content: string
@@ -11,6 +12,20 @@ type ToolResult = {
 const LEADER_TOOLS = ["askAgent", "getAgentHistory", "delegateTask"]
 const FINANCE_TOOLS = ["getOrders", "getProducts", "getRevenueSummary"]
 const MEMORY_TOOLS = ["updateCoreMemory", "deleteCoreMemory", "saveToArchive", "searchArchive"]
+const ADS_TOOLS = [
+  "getAdAccountOverview",
+  "listCampaigns",
+  "getCampaignInsights",
+  "searchTargetingOptions",
+  "createCampaign",
+  "createAdSet",
+  "createAd",
+  "activateCampaign",
+  "pauseCampaign",
+  "updateBudget",
+  "duplicateCampaign",
+  "comparePerformance",
+]
 
 export const executeTool = async (
   agentId: string,
@@ -29,6 +44,10 @@ export const executeTool = async (
 
     if (MEMORY_TOOLS.includes(toolName)) {
       return executeMemoryTool(agentId, toolName, toolInput)
+    }
+
+    if (ADS_TOOLS.includes(toolName)) {
+      return executeAdsTool(toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }
