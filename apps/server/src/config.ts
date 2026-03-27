@@ -14,5 +14,7 @@ export const config = {
   caktoClientSecret: process.env.CAKTO_CLIENT_SECRET ?? "",
   metaAdsAccessToken: process.env.META_ADS_ACCESS_TOKEN ?? "",
   metaAdsAccountId: process.env.META_ADS_ACCOUNT_ID ?? "",
+  metaAdsAppId: process.env.META_ADS_APP_ID ?? "",
+  metaAdsAppSecret: process.env.META_ADS_APP_SECRET ?? "",
   adsDailyBudgetLimit: Number(process.env.ADS_DAILY_BUDGET_LIMIT ?? 100),
 }

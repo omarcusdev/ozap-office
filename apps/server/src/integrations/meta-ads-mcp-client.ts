@@ -29,8 +29,8 @@ const ensureProcess = (): ChildProcess => {
     throw new Error("MCP process is already starting up")
   }
 
-  if (!config.metaAdsAccessToken || !config.metaAdsAccountId) {
-    throw new Error("META_ADS_ACCESS_TOKEN and META_ADS_ACCOUNT_ID must be set")
+  if (!config.metaAdsAccessToken) {
+    throw new Error("META_ADS_ACCESS_TOKEN must be set")
   }
 
   spawning = true
@@ -39,8 +39,9 @@ const ensureProcess = (): ChildProcess => {
     stdio: ["pipe", "pipe", "pipe"],
     env: {
       ...process.env,
-      META_ADS_ACCESS_TOKEN: config.metaAdsAccessToken,
-      META_ADS_ACCOUNT_ID: config.metaAdsAccountId,
+      META_ACCESS_TOKEN: config.metaAdsAccessToken,
+      META_APP_ID: config.metaAdsAppId,
+      META_APP_SECRET: config.metaAdsAppSecret,
     },
   })
 
