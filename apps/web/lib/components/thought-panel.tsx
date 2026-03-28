@@ -60,9 +60,7 @@ const groupEventsIntoConversation = (
     (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
   )
 
-  const responseEvents = events.filter(
-    (e) => e.type === "message" || e.type === "completed"
-  )
+  const responseEvents = events.filter((e) => e.type === "message")
 
   const agentResponse =
     responseEvents.length > 0

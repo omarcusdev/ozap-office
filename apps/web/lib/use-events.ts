@@ -1,43 +1,46 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { api } from "./api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
 export const useEvents = (agentId: string | null) => {
   const [events, setEvents] = useState<AgentEvent[]>([])
-  const [activeTaskRunId, setActiveTaskRunId] = useState<string | null>(null)
+  const activeTaskRunIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!agentId) {
       setEvents([])
-      setActiveTaskRunId(null)
+      activeTaskRunIdRef.current = null
       return
     }
 
     api.getLatestRun(agentId)
       .then((run) => {
-        setActiveTaskRunId(run.id)
+        activeTaskRunIdRef.current = run.id
         return api.getTaskRunEvents(agentId, run.id)
       })
       .then(setEvents)
       .catch(() => {
         setEvents([])
-        setActiveTaskRunId(null)
+        activeTaskRunIdRef.current = null
       })
   }, [agentId])
 
   const addEvent = useCallback(
     (event: AgentEvent) => {
-      if (activeTaskRunId && event.taskRunId !== activeTaskRunId) {
-        setActiveTaskRunId(event.taskRunId)
+      if (activeTaskRunIdRef.current && event.taskRunId !== activeTaskRunIdRef.current) {
+        activeTaskRunIdRef.current = event.taskRunId
         setEvents([event])
         return
       }
+      if (!activeTaskRunIdRef.current) {
+        activeTaskRunIdRef.current = event.taskRunId
+      }
       setEvents((prev) => [...prev, event])
     },
-    [activeTaskRunId]
+    []
   )
 
-  return { events, addEvent, activeTaskRunId }
+  return { events, addEvent, activeTaskRunId: activeTaskRunIdRef.current }
 }
