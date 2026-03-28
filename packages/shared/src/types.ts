@@ -37,6 +37,7 @@ export type TaskRun = {
 }
 
 export type AgentEventType =
+  | "user_message"
   | "thinking"
   | "tool_call"
   | "tool_result"

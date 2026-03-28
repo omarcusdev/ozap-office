@@ -53,6 +53,9 @@ const groupEventsIntoConversation = (
   events: AgentEvent[],
   pendingMessage: string | null
 ): ConversationGroup => {
+  const userMessageEvent = events.find((e) => e.type === "user_message")
+  const userMessage = pendingMessage ?? userMessageEvent?.content ?? null
+
   const internalEvents = events.filter(
     (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
   )
@@ -73,7 +76,7 @@ const groupEventsIntoConversation = (
   const isProcessing = events.length > 0 && !hasTerminalEvent
 
   return {
-    userMessage: pendingMessage,
+    userMessage,
     internalEvents,
     agentResponse,
     isProcessing,
@@ -210,7 +213,7 @@ export const ThoughtPanel = () => {
   }, [events])
 
   useEffect(() => {
-    if (events.length > 0 && pendingMessage) {
+    if (pendingMessage && events.some((e) => e.type === "user_message")) {
       setPendingMessage(null)
     }
   }, [events, pendingMessage])

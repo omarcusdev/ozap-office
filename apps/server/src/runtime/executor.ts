@@ -84,6 +84,10 @@ export const executeAgent = async (
 
   await updateAgentStatus(agentId, "working")
 
+  if (inputContext) {
+    await emitEvent(agentId, taskRun.id, "user_message", inputContext)
+  }
+
   const agentTools = agentWithMemory.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
 
