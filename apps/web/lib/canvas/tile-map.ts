@@ -73,6 +73,7 @@ export const OPEN_OFFICE_DESK_POSITIONS: Array<{ gridX: number; gridY: number }>
   { gridX: 20, gridY: 4 },
   { gridX: 23, gridY: 4 },
   { gridX: 26, gridY: 4 },
+  { gridX: 14, gridY: 7 },
 ]
 
 type Waypoint = { x: number; y: number }
@@ -121,6 +122,13 @@ export const MEETING_ROUTES: Record<string, { path: Waypoint[]; seat: Waypoint }
     ],
     seat: { x: 14, y: 17 },
   },
+  Analytics: {
+    path: [
+      { x: 14, y: 8 }, { x: 13, y: 10 },
+      { x: 13, y: 11 }, { x: 15, y: 13 },
+    ],
+    seat: { x: 15, y: 13 },
+  },
 }
 
 export const FURNITURE_PLACEMENTS: FurniturePlacement[] = [
@@ -141,6 +149,8 @@ export const FURNITURE_PLACEMENTS: FurniturePlacement[] = [
   { id: "CUSHIONED_CHAIR", gridX: 20, gridY: 4, orientation: "back" },
   { id: "CUSHIONED_CHAIR", gridX: 23, gridY: 4, orientation: "back" },
   { id: "CUSHIONED_CHAIR", gridX: 26, gridY: 4, orientation: "back" },
+  { id: "PC", gridX: 14, gridY: 6, state: "off" },
+  { id: "CUSHIONED_CHAIR", gridX: 14, gridY: 7, orientation: "back" },
   { id: "COFFEE", gridX: 25, gridY: 8 },
   { id: "HANGING_PLANT", gridX: 18, gridY: 1 },
   { id: "CLOCK", gridX: 22, gridY: 1 },
