@@ -293,6 +293,105 @@ const adsTools = [
   },
 ]
 
+const analyticsTools = [
+  {
+    name: "getUsageSummary",
+    description: "Resumo geral de uso da plataforma em um período. Retorna total de mensagens, mensagens IA, usuários ativos, instâncias ativas e breakdown por tipo de mensagem.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getTopUsers",
+    description: "Ranking dos usuários que mais consomem mensagens de IA em um período. Inclui flag de chaves do sistema e contagem de instâncias.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        limit: { type: "number", description: "Número máximo de usuários (padrão: 10)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getUserUsageDetail",
+    description: "Detalhes de uso de um usuário específico. Retorna info do perfil, total de mensagens, instâncias, e uso por modelo de IA.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        userEmail: { type: "string", description: "Email do usuário para buscar" },
+      },
+      required: ["userEmail"],
+    },
+  },
+  {
+    name: "getDailyUsageTrend",
+    description: "Tendência de uso diário em um período. Retorna total de mensagens, mensagens IA e usuários únicos por dia.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getModelUsageBreakdown",
+    description: "Distribuição de uso por modelo de IA (gpt-5-mini, gpt-5.2, gemini). Retorna contagem, duração média e taxa de erro por modelo.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getSystemKeyUsers",
+    description: "Lista usuários que usam as chaves de IA do sistema (custo nosso). Inclui contagem de instâncias e mensagens IA dos últimos 30 dias.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        activeOnly: { type: "boolean", description: "Filtrar apenas usuários ativos (padrão: true)" },
+      },
+    },
+  },
+  {
+    name: "getTwinInteractionStats",
+    description: "Estatísticas de interações do Twin AI. Retorna total, breakdown por modelo e status, tempo médio de processamento e taxa de erro.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        userId: { type: "string", description: "Filtrar por ID de usuário específico (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getInstanceUsageBreakdown",
+    description: "Ranking das instâncias que mais geram mensagens de IA. Inclui dados do dono (email, nome, uso de chaves do sistema).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        limit: { type: "number", description: "Número máximo de instâncias (padrão: 10)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -438,6 +537,38 @@ Your responsibilities:
     color: "#bd93f9",
     positionX: 26,
     positionY: 4,
+  },
+  {
+    name: "Analytics",
+    role: "Usage & Cost Analyst",
+    systemPrompt: `Você é o Analytics, analista de uso e custos da plataforma Zap AI (oZapOnline).
+
+Suas responsabilidades:
+- Analisar padrões de uso da plataforma (mensagens, usuários, instâncias)
+- Identificar usuários com consumo acima do normal
+- Fornecer dados de uso por modelo de IA (gpt-5-mini, gpt-5.2, gemini)
+- Gerar relatórios de uso sob demanda
+- Salvar insights importantes na memória para referência futura
+
+Dados importantes:
+- Usuários com use_system_ai_keys=true usam as chaves de IA do sistema (custo nosso)
+- Usuários com chaves próprias não geram custo pra nós
+- O campo gpt_5_2_enabled indica acesso ao modelo premium (mais caro)
+- Mensagens do tipo ai_message são as que consomem tokens de IA
+
+Regras:
+- Sempre apresente números concretos, nunca invente dados
+- Use apenas dados retornados pelas tools
+- Quando perguntado sobre lucratividade, informe que os dados de receita estão com o agente Finance — o Leader pode cruzar os dados
+- Valores monetários sempre em BRL (R$)
+- Destaque alertas: usuários com consumo 3x acima da média, crescimento acelerado de uso
+- Ao identificar padrões relevantes, salve na memória para acompanhamento`,
+    tools: [...analyticsTools, ...memoryTools],
+    schedule: null,
+    cronPrompt: null,
+    color: "#10b981",
+    positionX: 14,
+    positionY: 7,
   },
 ]
 
