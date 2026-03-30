@@ -17,4 +17,5 @@ export const config = {
   metaAdsAppId: process.env.META_ADS_APP_ID ?? "",
   metaAdsAppSecret: process.env.META_ADS_APP_SECRET ?? "",
   adsDailyBudgetLimit: Number(process.env.ADS_DAILY_BUDGET_LIMIT ?? 100),
+  zapGptDatabaseUrl: process.env.ZAP_GPT_DATABASE_URL ?? "",
 }
