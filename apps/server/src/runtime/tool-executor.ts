@@ -3,6 +3,7 @@ import { executeLeaderTool } from "../tools/leader.js"
 import { executeFinanceTool } from "../tools/finance.js"
 import { executeMemoryTool } from "../tools/memory.js"
 import { executeAdsTool } from "../tools/ads.js"
+import { executeAnalyticsTool } from "../tools/analytics.js"
 
 type ToolResult = {
   content: string
@@ -26,6 +27,16 @@ const ADS_TOOLS = [
   "duplicateCampaign",
   "comparePerformance",
 ]
+const ANALYTICS_TOOLS = [
+  "getUsageSummary",
+  "getTopUsers",
+  "getUserUsageDetail",
+  "getDailyUsageTrend",
+  "getModelUsageBreakdown",
+  "getSystemKeyUsers",
+  "getTwinInteractionStats",
+  "getInstanceUsageBreakdown",
+]
 
 export const executeTool = async (
   agentId: string,
@@ -48,6 +59,10 @@ export const executeTool = async (
 
     if (ADS_TOOLS.includes(toolName)) {
       return executeAdsTool(toolName, toolInput)
+    }
+
+    if (ANALYTICS_TOOLS.includes(toolName)) {
+      return executeAnalyticsTool(toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }
