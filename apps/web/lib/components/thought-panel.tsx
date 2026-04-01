@@ -8,6 +8,7 @@ import { useAgentsQuery } from "@/lib/queries/agent-queries"
 import { useConversationQuery, useClearConversationMutation, useSendMessageMutation } from "@/lib/queries/conversation-queries"
 import { MarkdownRenderer } from "./markdown-renderer"
 import { SessionPicker } from "./session-picker"
+import { DelegationThread, groupDelegationEvents } from "./delegation-thread"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
@@ -223,10 +224,11 @@ export const ThoughtPanel = () => {
     }
   }
 
-  const internalEvents = events.filter(
+  const { delegations, otherEvents: nonDelegationEvents } = groupDelegationEvents(events)
+  const internalEvents = nonDelegationEvents.filter(
     (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
   )
-  const responseEvents = events.filter((e) => e.type === "message")
+  const responseEvents = nonDelegationEvents.filter((e) => e.type === "message")
   const currentResponse = responseEvents.length > 0
     ? responseEvents.map((e) => e.content).join("\n\n")
     : null
@@ -305,6 +307,9 @@ export const ThoughtPanel = () => {
 
                   {currentUserMessage && <UserBubble message={currentUserMessage} />}
                   {internalEvents.length > 0 && <InternalDetails events={internalEvents} />}
+                  {delegations.map((pair) => (
+                    <DelegationThread key={pair.start.id} pair={pair} />
+                  ))}
                   {currentResponse && <AgentBubble content={currentResponse} />}
                   {isProcessing && <TypingIndicator />}
                 </div>
