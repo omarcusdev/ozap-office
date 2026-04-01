@@ -94,6 +94,29 @@ export const conversationMessages = pgTable(
   ]
 )
 
+export const pageViews = pgTable(
+  "page_views",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    site: text("site").notNull(),
+    pagePath: text("page_path").notNull(),
+    referrer: text("referrer"),
+    referrerSource: text("referrer_source").notNull(),
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
+    utmContent: text("utm_content"),
+    utmTerm: text("utm_term"),
+    screenWidth: integer("screen_width"),
+    sessionId: text("session_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("page_views_site_created_idx").on(table.site, table.createdAt),
+    index("page_views_source_idx").on(table.referrerSource, table.createdAt),
+  ]
+)
+
 export const agentMemories = pgTable(
   "agent_memories",
   {

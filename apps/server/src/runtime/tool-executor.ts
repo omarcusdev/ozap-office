@@ -4,6 +4,7 @@ import { executeFinanceTool } from "../tools/finance.js"
 import { executeMemoryTool } from "../tools/memory.js"
 import { executeAdsTool } from "../tools/ads.js"
 import { executeAnalyticsTool } from "../tools/analytics.js"
+import { executeTrafficTool } from "../tools/traffic.js"
 
 type ToolResult = {
   content: string
@@ -26,6 +27,13 @@ const ADS_TOOLS = [
   "updateBudget",
   "duplicateCampaign",
   "comparePerformance",
+]
+const TRAFFIC_TOOLS = [
+  "getTrafficSummary",
+  "getTrafficBySource",
+  "getDailyTraffic",
+  "getUtmBreakdown",
+  "getPageBreakdown",
 ]
 const ANALYTICS_TOOLS = [
   "getUsageSummary",
@@ -59,6 +67,10 @@ export const executeTool = async (
 
     if (ADS_TOOLS.includes(toolName)) {
       return executeAdsTool(toolName, toolInput)
+    }
+
+    if (TRAFFIC_TOOLS.includes(toolName)) {
+      return executeTrafficTool(toolName, toolInput)
     }
 
     if (ANALYTICS_TOOLS.includes(toolName)) {

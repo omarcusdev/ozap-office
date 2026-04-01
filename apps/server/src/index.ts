@@ -8,6 +8,7 @@ import { registerAgentRoutes } from "./routes/agents.js"
 import { registerTaskRunRoutes } from "./routes/task-runs.js"
 import { registerApprovalRoutes } from "./routes/approvals.js"
 import { registerMeetingRoutes } from "./routes/meetings.js"
+import { registerTrackingRoutes } from "./routes/tracking.js"
 import { registerWebSocket } from "./events/websocket.js"
 import { startScheduler } from "./scheduler/index.js"
 import { recoverOrphanedTaskRuns } from "./startup.js"
@@ -17,6 +18,8 @@ const buildServer = async () => {
 
   await server.register(cors, { origin: config.corsOrigin })
   await server.register(websocket)
+
+  registerTrackingRoutes(server)
 
   server.addHook("preHandler", validateApiKey)
 

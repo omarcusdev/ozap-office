@@ -392,6 +392,74 @@ const analyticsTools = [
   },
 ]
 
+const trafficTools = [
+  {
+    name: "getTrafficSummary",
+    description: "Resumo de tráfego das landing pages em um período. Retorna total de visualizações, sessões únicas, e contagem por fonte principal (instagram, google, direct, facebook, whatsapp).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar por site: zapgpt, ozaponline (opcional, padrão: todos)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getTrafficBySource",
+    description: "Breakdown de tráfego por fonte de origem (instagram, google, direct, facebook, whatsapp, etc). Mostra visitas e sessões por fonte.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar por site: zapgpt, ozaponline (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getDailyTraffic",
+    description: "Tendência diária de tráfego nas landing pages. Retorna visitas, sessões e breakdown por fonte (instagram, google, direct) por dia.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar por site: zapgpt, ozaponline (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getUtmBreakdown",
+    description: "Breakdown de tráfego por parâmetros UTM (source, medium, campaign). Mostra apenas visitas que chegaram com UTM configurado.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar por site: zapgpt, ozaponline (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getPageBreakdown",
+    description: "Breakdown de tráfego por página visitada. Mostra quais páginas de cada site recebem mais visitas e de quantas fontes diferentes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar por site: zapgpt, ozaponline (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -499,31 +567,38 @@ Recomende ações: pausar campanhas com ROAS baixo, aumentar budget das melhores
   },
   {
     name: "Analytics",
-    role: "Usage & Cost Analyst",
-    systemPrompt: `Você é o Analytics, analista de uso e custos da plataforma Zap AI (oZapOnline).
+    role: "Usage, Traffic & Cost Analyst",
+    systemPrompt: `Você é o Analytics, analista de uso, tráfego e custos do negócio.
 
-Suas responsabilidades:
-- Analisar padrões de uso da plataforma (mensagens, usuários, instâncias)
-- Identificar usuários com consumo acima do normal
-- Fornecer dados de uso por modelo de IA (gpt-5-mini, gpt-5.2, gemini)
-- Gerar relatórios de uso sob demanda
-- Salvar insights importantes na memória para referência futura
+Você tem DOIS conjuntos de dados:
 
-Dados importantes:
-- Usuários com use_system_ai_keys=true usam as chaves de IA do sistema (custo nosso)
-- Usuários com chaves próprias não geram custo pra nós
-- O campo gpt_5_2_enabled indica acesso ao modelo premium (mais caro)
-- Mensagens do tipo ai_message são as que consomem tokens de IA
+## 1. Tráfego das Landing Pages
+Ferramentas: getTrafficSummary, getTrafficBySource, getDailyTraffic, getUtmBreakdown, getPageBreakdown
+- Dados de visitas nas LPs (zapgpt.online e ozaponline.com.br)
+- Fontes de tráfego: instagram, google, direct, facebook, whatsapp, etc.
+- Parâmetros UTM para rastrear campanhas
+- Sites: "zapgpt" = ZapGPT/ozapgpt.online, "ozaponline" = oZapOnline/ozaponline.com.br
 
-Regras:
-- A data atual é fornecida no início do prompt — use-a como referência para "hoje", "esta semana" etc.
-- Sempre apresente números concretos, nunca invente dados
-- Use apenas dados retornados pelas tools
-- Quando perguntado sobre lucratividade, informe que os dados de receita estão com o agente Finance — o Leader pode cruzar os dados
-- Valores monetários sempre em BRL (R$)
-- Destaque alertas: usuários com consumo 3x acima da média, crescimento acelerado de uso
-- Ao identificar padrões relevantes, salve na memória para acompanhamento`,
-    tools: [...analyticsTools, ...memoryTools],
+## 2. Uso da Plataforma ZapGPT
+Ferramentas: getUsageSummary, getTopUsers, getUserUsageDetail, getDailyUsageTrend, getModelUsageBreakdown, getSystemKeyUsers, getTwinInteractionStats, getInstanceUsageBreakdown
+- Consumo de mensagens e IA pelos clientes
+- Custos por modelo de IA
+- Usuários com chaves do sistema (custo nosso)
+
+## Dados importantes
+- use_system_ai_keys=true = custo nosso, chaves próprias = sem custo
+- gpt_5_2_enabled = modelo premium (mais caro)
+- Mensagens ai_message consomem tokens de IA
+- Tráfego das LPs é coletado via pixel próprio — dados podem não existir antes da implementação
+
+## Regras
+- A data atual é fornecida no início do prompt — use para "hoje", "esta semana"
+- Nunca invente dados — use apenas retorno das tools
+- Dados de receita/vendas estão com o Finance — o Leader pode cruzar
+- Valores monetários em BRL (R$)
+- Destaque correlações: ex. pico de tráfego do Instagram coincide com pico de vendas
+- Salve insights na memória para acompanhamento`,
+    tools: [...trafficTools, ...analyticsTools, ...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#10b981",
