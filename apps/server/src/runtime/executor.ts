@@ -1,8 +1,8 @@
 import { nanoid } from "nanoid"
 import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
-import { agents, taskRuns, events, meetingMessages, agentMemories } from "../db/schema.js"
-import { eq, and } from "drizzle-orm"
+import { agents, taskRuns, events, meetingMessages, agentMemories, conversationMessages } from "../db/schema.js"
+import { eq, and, desc } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
 import { eventBus } from "../events/event-bus.js"
@@ -49,6 +49,79 @@ const buildCoreMemoryBlock = async (agentId: string): Promise<string> => {
   return `\n\n## Your Current Memory\n${entries}`
 }
 
+const buildDateContext = (): string => {
+  const now = new Date()
+  const dateStr = now.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "America/Sao_Paulo",
+  })
+  const timeStr = now.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  })
+  const isoDate = now.toISOString().split("T")[0]
+  return `[Data atual: ${dateStr}, ${timeStr} (São Paulo/BRT) | ISO: ${isoDate}]`
+}
+
+const buildTeamRosterBlock = async (currentAgentId: string): Promise<string> => {
+  const allAgents = await db
+    .select({ id: agents.id, name: agents.name, role: agents.role, tools: agents.tools, status: agents.status })
+    .from(agents)
+
+  const memoryToolNames = ["updateCoreMemory", "deleteCoreMemory", "saveToArchive", "searchArchive"]
+  const teammates = allAgents.filter((a) => a.id !== currentAgentId)
+  if (teammates.length === 0) return ""
+
+  const entries = teammates
+    .map((a) => {
+      const toolNames = (a.tools as ToolDefinition[])
+        .filter((t) => !memoryToolNames.includes(t.name))
+        .map((t) => t.name)
+        .join(", ")
+      return `- **${a.name}** (ID: \`${a.id}\`) — ${a.role}. Status: ${a.status}. Tools: ${toolNames || "none"}`
+    })
+    .join("\n")
+
+  return `\n\n## Your Team\nUse the agent IDs below with askAgent, getAgentHistory, or delegateTask:\n${entries}`
+}
+
+const loadConversationHistory = async (agentId: string): Promise<Message[]> => {
+  const rows = await db
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.agentId, agentId))
+    .orderBy(desc(conversationMessages.createdAt))
+    .limit(20)
+
+  rows.reverse()
+
+  const sanitized: typeof rows = []
+  for (const msg of rows) {
+    const last = sanitized[sanitized.length - 1]
+    if (last && last.role === msg.role) continue
+    sanitized.push(msg)
+  }
+  if (sanitized.length > 0 && sanitized[0].role !== "user") {
+    sanitized.shift()
+  }
+
+  return sanitized.map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: [{ text: m.content }],
+  }))
+}
+
+const saveConversationTurn = async (agentId: string, userMessage: string, assistantResponse: string) => {
+  await db.insert(conversationMessages).values([
+    { agentId, role: "user", content: userMessage },
+    { agentId, role: "assistant", content: assistantResponse },
+  ])
+}
+
 const extractToolUseBlocks = (content: ContentBlock[]) =>
   content.filter((block): block is ContentBlock & { toolUse: NonNullable<ContentBlock["toolUse"]> } =>
     block.toolUse !== undefined
@@ -69,7 +142,11 @@ export const executeAgent = async (
   if (!agent) throw new Error(`Agent ${agentId} not found`)
 
   const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
-  const agentWithMemory = { ...agent, systemPrompt: agent.systemPrompt + coreMemoryBlock }
+  let systemPrompt = buildDateContext() + "\n\n" + agent.systemPrompt + coreMemoryBlock
+
+  if (agent.name === "Leader") {
+    systemPrompt += await buildTeamRosterBlock(agentId)
+  }
 
   const [taskRun] = await db
     .insert(taskRuns)
@@ -88,17 +165,21 @@ export const executeAgent = async (
     await emitEvent(agentId, taskRun.id, "user_message", inputContext)
   }
 
-  const agentTools = agentWithMemory.tools as ToolDefinition[]
+  const agentTools = agent.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
 
-  const messages: Message[] = []
+  const historyMessages = inputContext ? await loadConversationHistory(agentId) : []
+  const messages: Message[] = [...historyMessages]
+
   if (inputContext) {
     messages.push({ role: "user", content: [{ text: inputContext }] })
   } else {
     messages.push({ role: "user", content: [{ text: "Execute your scheduled task." }] })
   }
 
-  const failed = await runAgenticLoop(agentWithMemory, taskRun.id, messages, agentTools, bedrockTools)
+  const agentWithPrompt = { id: agent.id, systemPrompt }
+
+  const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools)
     .then(() => false)
     .catch(async (error) => {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -109,6 +190,14 @@ export const executeAgent = async (
       await emitEvent(agentId, taskRun.id, "error", errorMessage)
       return true
     })
+
+  if (!failed && inputContext && trigger !== "cron") {
+    const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
+    const output = completedRun?.output as { result?: string } | null
+    if (output?.result) {
+      await saveConversationTurn(agentId, inputContext, output.result)
+    }
+  }
 
   const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
   await updateAgentStatus(agentId, finalStatus)

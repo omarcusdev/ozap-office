@@ -87,47 +87,26 @@ export const MEETING_ROUTES: Record<string, { path: Waypoint[]; seat: Waypoint }
     ],
     seat: { x: 14, y: 13 },
   },
-  Instagram: {
+  Finance: {
     path: [
       { x: 14, y: 5 }, { x: 13, y: 8 }, { x: 13, y: 10 },
       { x: 13, y: 11 }, { x: 12, y: 14 },
     ],
     seat: { x: 12, y: 14 },
   },
-  Sales: {
+  Ads: {
     path: [
       { x: 17, y: 5 }, { x: 14, y: 8 }, { x: 14, y: 10 },
       { x: 14, y: 11 }, { x: 16, y: 14 },
     ],
     seat: { x: 16, y: 14 },
   },
-  Ads: {
+  Analytics: {
     path: [
       { x: 20, y: 5 }, { x: 16, y: 8 }, { x: 14, y: 10 },
       { x: 13, y: 11 }, { x: 12, y: 16 },
     ],
     seat: { x: 12, y: 16 },
-  },
-  Finance: {
-    path: [
-      { x: 23, y: 5 }, { x: 18, y: 8 }, { x: 14, y: 10 },
-      { x: 14, y: 11 }, { x: 16, y: 16 },
-    ],
-    seat: { x: 16, y: 16 },
-  },
-  PM: {
-    path: [
-      { x: 26, y: 5 }, { x: 20, y: 8 }, { x: 14, y: 10 },
-      { x: 14, y: 11 }, { x: 14, y: 17 },
-    ],
-    seat: { x: 14, y: 17 },
-  },
-  Analytics: {
-    path: [
-      { x: 14, y: 8 }, { x: 13, y: 10 },
-      { x: 13, y: 11 }, { x: 15, y: 13 },
-    ],
-    seat: { x: 15, y: 13 },
   },
 }
 

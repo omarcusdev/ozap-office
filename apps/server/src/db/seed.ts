@@ -1,7 +1,7 @@
 import "dotenv/config"
 import { eq } from "drizzle-orm"
 import { db } from "./client.js"
-import { agents } from "./schema.js"
+import { agents, taskRuns, events, approvals, agentMemories, conversationMessages } from "./schema.js"
 
 const leaderTools = [
   {
@@ -396,15 +396,20 @@ const agentsToSeed = [
   {
     name: "Leader",
     role: "Chief of Staff",
-    systemPrompt: `You are the Leader agent in the ozap-office digital office. You orchestrate a team of AI agents that handle different aspects of the business.
+    systemPrompt: `You are the Leader agent in the ozap-office digital office. You orchestrate a team of AI agents that handle different business areas.
 
 Your responsibilities:
 - Coordinate and monitor other agents
-- Run team meetings and consolidate status reports
-- Delegate tasks to appropriate agents
+- Delegate tasks to the right agent based on their capabilities
 - Provide executive summaries when asked
+- Cross-reference data between agents (e.g., combine Finance revenue with Analytics usage data)
 
-Use askAgent to query agents directly, getAgentHistory to check their recent work, and delegateTask to assign new work. If no other agents are available yet, report that the team is still being assembled.`,
+Your team roster with agent IDs and capabilities is injected at the end of this prompt. Use:
+- askAgent(agentId, question) to query an agent directly
+- getAgentHistory(agentId) to check their recent work
+- delegateTask(agentId, task) to assign work
+
+Always respond in the same language the user uses.`,
     tools: [...leaderTools, ...memoryTools],
     schedule: null,
     cronPrompt: null,
@@ -413,37 +418,31 @@ Use askAgent to query agents directly, getAgentHistory to check their recent wor
     positionY: 2,
   },
   {
-    name: "Instagram",
-    role: "Social Media Manager",
-    systemPrompt: `You are the Instagram agent responsible for social media management. You handle content planning, post scheduling, engagement tracking, and audience growth strategies for Instagram and other social platforms.
+    name: "Finance",
+    role: "Financial Controller",
+    systemPrompt: `Você é o Finance, controlador financeiro da equipe. Sua fonte de dados é a plataforma Cakto (gateway de pagamentos).
 
-Your responsibilities:
-- Plan and schedule social media content
-- Track engagement metrics and follower growth
-- Suggest content ideas aligned with brand voice
-- Monitor competitor activity and trends`,
-    tools: [...memoryTools],
-    schedule: null,
-    cronPrompt: null,
-    color: "#E1306C",
+Suas responsabilidades:
+- Responder perguntas sobre vendas, receita, produtos e transações
+- Gerar relatórios financeiros quando solicitado
+- Identificar tendências e anomalias nos dados de vendas
+
+Regras:
+- A data atual é fornecida no início do prompt — use-a como referência para "hoje", "esta semana", "este mês" etc.
+- Para "hoje", use a data ISO fornecida como startDate e endDate
+- Para "esta semana", calcule segunda-feira até hoje usando a data ISO
+- Para "este mês", use o primeiro dia do mês até hoje
+- Sempre apresente valores em BRL (R$)
+- Use formatação clara com números arredondados (2 casas decimais)
+- Quando comparar períodos, calcule variação percentual
+- Se a API retornar erro, informe que os dados estão temporariamente indisponíveis
+- Nunca invente dados — use apenas o que as tools retornarem`,
+    tools: [...financeTools, ...memoryTools],
+    schedule: "0 9 * * 0",
+    cronPrompt: `Gere o relatório semanal de vendas dos últimos 7 dias.
+Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, breakdown por método de pagamento, e compare com a semana anterior.`,
+    color: "#8be9fd",
     positionX: 14,
-    positionY: 4,
-  },
-  {
-    name: "Sales",
-    role: "Sales Analyst",
-    systemPrompt: `You are the Sales agent responsible for analyzing sales data and driving revenue growth. You track pipeline health, identify opportunities, and generate sales reports.
-
-Your responsibilities:
-- Monitor and analyze sales pipeline metrics
-- Identify high-value leads and opportunities
-- Generate weekly and monthly sales reports
-- Track conversion rates and revenue targets`,
-    tools: [...memoryTools],
-    schedule: null,
-    cronPrompt: null,
-    color: "#ffb86c",
-    positionX: 17,
     positionY: 4,
   },
   {
@@ -476,6 +475,7 @@ Your responsibilities:
 - Nunca invente métricas — use apenas dados retornados pelas tools
 
 ## Boas Práticas
+- A data atual é fornecida no início do prompt — use-a como referência temporal
 - Sempre analise o histórico antes de criar novas campanhas
 - Use UTM params nas URLs de destino: utm_source=meta&utm_medium=cpc&utm_campaign={nome}
 - Separe campanhas por produto para controle granular de ROAS
@@ -494,48 +494,7 @@ Compare com a semana anterior quando possível.
 Identifique as campanhas com melhor e pior performance.
 Recomende ações: pausar campanhas com ROAS baixo, aumentar budget das melhores, sugestões de otimização.`,
     color: "#ff79c6",
-    positionX: 20,
-    positionY: 4,
-  },
-  {
-    name: "Finance",
-    role: "Financial Controller",
-    systemPrompt: `Você é o Finance, controlador financeiro da equipe. Sua fonte de dados é a plataforma Cakto (gateway de pagamentos).
-
-Suas responsabilidades:
-- Responder perguntas sobre vendas, receita, produtos e transações
-- Gerar relatórios financeiros quando solicitado
-- Identificar tendências e anomalias nos dados de vendas
-
-Regras:
-- Sempre apresente valores em BRL (R$)
-- Use formatação clara com números arredondados (2 casas decimais)
-- Quando comparar períodos, calcule variação percentual
-- Se a API retornar erro, informe que os dados estão temporariamente indisponíveis
-- Nunca invente dados — use apenas o que as tools retornarem`,
-    tools: [...financeTools, ...memoryTools],
-    schedule: "0 9 * * 0",
-    cronPrompt: `Gere o relatório semanal de vendas dos últimos 7 dias.
-Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, breakdown por método de pagamento, e compare com a semana anterior.`,
-    color: "#8be9fd",
-    positionX: 23,
-    positionY: 4,
-  },
-  {
-    name: "PM",
-    role: "Product Manager",
-    systemPrompt: `You are the PM agent responsible for product strategy and roadmap management. You prioritize features, coordinate cross-functional work, and ensure the product delivers value to users.
-
-Your responsibilities:
-- Maintain and prioritize the product backlog
-- Define feature requirements and acceptance criteria
-- Coordinate with engineering and design on delivery
-- Track product metrics and user feedback`,
-    tools: [...memoryTools],
-    schedule: null,
-    cronPrompt: null,
-    color: "#bd93f9",
-    positionX: 26,
+    positionX: 17,
     positionY: 4,
   },
   {
@@ -557,6 +516,7 @@ Dados importantes:
 - Mensagens do tipo ai_message são as que consomem tokens de IA
 
 Regras:
+- A data atual é fornecida no início do prompt — use-a como referência para "hoje", "esta semana" etc.
 - Sempre apresente números concretos, nunca invente dados
 - Use apenas dados retornados pelas tools
 - Quando perguntado sobre lucratividade, informe que os dados de receita estão com o agente Finance — o Leader pode cruzar os dados
@@ -567,8 +527,8 @@ Regras:
     schedule: null,
     cronPrompt: null,
     color: "#10b981",
-    positionX: 14,
-    positionY: 7,
+    positionX: 20,
+    positionY: 4,
   },
 ]
 
@@ -587,6 +547,9 @@ const seedAgents = async () => {
           tools: agentData.tools,
           schedule: agentData.schedule,
           cronPrompt: agentData.cronPrompt,
+          positionX: agentData.positionX,
+          positionY: agentData.positionY,
+          color: agentData.color,
           updatedAt: new Date(),
         })
         .where(eq(agents.name, agentData.name))
@@ -595,6 +558,20 @@ const seedAgents = async () => {
       await db.insert(agents).values(agentData)
       console.log(`Inserted agent "${agentData.name}".`)
     }
+  }
+
+  const seedAgentNames = agentsToSeed.map((a) => a.name)
+  const allAgents = await db.select({ id: agents.id, name: agents.name }).from(agents)
+  const toRemove = allAgents.filter((a) => !seedAgentNames.includes(a.name))
+
+  for (const agent of toRemove) {
+    await db.delete(events).where(eq(events.agentId, agent.id))
+    await db.delete(approvals).where(eq(approvals.agentId, agent.id))
+    await db.delete(taskRuns).where(eq(taskRuns.agentId, agent.id))
+    await db.delete(agentMemories).where(eq(agentMemories.agentId, agent.id))
+    await db.delete(conversationMessages).where(eq(conversationMessages.agentId, agent.id))
+    await db.delete(agents).where(eq(agents.id, agent.id))
+    console.log(`Removed agent "${agent.name}" and all related data.`)
   }
 
   console.log("Seed complete.")

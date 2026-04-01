@@ -1,4 +1,4 @@
-import type { AgentConfig, AgentEvent, Approval, Meeting, MeetingMessage, TaskRun } from "@ozap-office/shared"
+import type { AgentConfig, AgentEvent, Approval, ConversationMessage, Meeting, MeetingMessage, TaskRun } from "@ozap-office/shared"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
@@ -35,6 +35,10 @@ export const api = {
   getMeetingMessages: (id: string) => request<MeetingMessage[]>(`/api/meetings/${id}/messages`),
   sendMeetingMessage: (id: string, content: string) =>
     request<{ userMessage: MeetingMessage; leaderResponse: string }>(`/api/meetings/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+  getConversation: (agentId: string) =>
+    request<ConversationMessage[]>(`/api/agents/${agentId}/conversation`),
+  clearConversation: (agentId: string) =>
+    request<{ status: string }>(`/api/agents/${agentId}/conversation`, { method: "DELETE" }),
   markAgentRead: (id: string) =>
     request<{ status: string }>(`/api/agents/${id}/read`, { method: "POST" }),
   getLatestRun: (agentId: string) =>

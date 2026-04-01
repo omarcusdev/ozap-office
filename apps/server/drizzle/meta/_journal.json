@@ -22,6 +22,13 @@
       "when": 1773630706624,
       "tag": "0002_blushing_harpoon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775003491964,
+      "tag": "0003_easy_forge",
+      "breakpoints": true
     }
   ]
 }

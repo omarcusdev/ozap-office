@@ -4,13 +4,16 @@ import { createContext, useContext, useCallback, useState, type ReactNode } from
 import { useWebSocket } from "@/lib/use-websocket"
 import { useAgents, type RenderAgent } from "@/lib/use-agents"
 import { useEvents } from "@/lib/use-events"
-import type { WsServerMessage, AgentEvent } from "@ozap-office/shared"
+import { useConversation } from "@/lib/use-conversation"
+import type { WsServerMessage, AgentEvent, ConversationMessage } from "@ozap-office/shared"
 
 type OfficeContextType = {
   agents: ReturnType<typeof useAgents>["agents"]
   loading: boolean
   selectedAgentId: string | null
   selectAgent: (id: string | null) => void
+  conversation: ConversationMessage[]
+  clearConversation: () => Promise<void>
   events: AgentEvent[]
   inMeeting: boolean
   callMeeting: () => void
@@ -29,7 +32,8 @@ export const useOffice = () => {
 export const OfficeProvider = ({ children }: { children: ReactNode }) => {
   const { agents, loading, updateAgentStatus, inMeeting, callMeeting, endMeeting, getRenderPositions } = useAgents()
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const { events, addEvent, activeTaskRunId } = useEvents(selectedAgentId)
+  const { conversation, refreshConversation, clearConversation } = useConversation(selectedAgentId)
+  const { events, addEvent } = useEvents(selectedAgentId, refreshConversation)
 
   const handleWsMessage = useCallback(
     (message: WsServerMessage) => {
@@ -53,6 +57,8 @@ export const OfficeProvider = ({ children }: { children: ReactNode }) => {
         loading,
         selectedAgentId,
         selectAgent: setSelectedAgentId,
+        conversation,
+        clearConversation,
         events,
         inMeeting,
         callMeeting,

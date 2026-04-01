@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify"
 import { db } from "../db/client.js"
-import { agents, events, taskRuns } from "../db/schema.js"
+import { agents, events, taskRuns, conversationMessages } from "../db/schema.js"
 import { eq, gt, and, desc } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { eventBus } from "../events/event-bus.js"
@@ -54,6 +54,20 @@ export const registerAgentRoutes = (server: FastifyInstance) => {
     const message = (request.body as any)?.message
     const taskRun = await executeAgent(agent.id, "manual", message || undefined)
     return { taskRunId: taskRun.id }
+  })
+
+  server.get<{ Params: { id: string } }>("/api/agents/:id/conversation", async (request) => {
+    return db
+      .select()
+      .from(conversationMessages)
+      .where(eq(conversationMessages.agentId, request.params.id))
+      .orderBy(conversationMessages.createdAt)
+      .limit(50)
+  })
+
+  server.delete<{ Params: { id: string } }>("/api/agents/:id/conversation", async (request) => {
+    await db.delete(conversationMessages).where(eq(conversationMessages.agentId, request.params.id))
+    return { status: "ok" }
   })
 
   server.post<{ Params: { id: string } }>("/api/agents/:id/read", async (request, reply) => {

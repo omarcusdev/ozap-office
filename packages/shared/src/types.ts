@@ -97,6 +97,14 @@ export type WsClientMessage =
   | { type: "subscribe"; payload: { agentId: string } }
   | { type: "unsubscribe"; payload: { agentId: string } }
 
+export type ConversationMessage = {
+  id: string
+  agentId: string
+  role: "user" | "assistant"
+  content: string
+  createdAt: Date
+}
+
 export type AgentMemoryType = "core" | "archival"
 
 export type AgentMemory = {

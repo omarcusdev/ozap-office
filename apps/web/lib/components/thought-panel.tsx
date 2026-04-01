@@ -6,16 +6,6 @@ import { useOffice } from "@/app/providers"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
-const EVENT_COLORS: Record<string, string> = {
-  thinking: "#c89b3c",
-  tool_call: "#7ab87a",
-  tool_result: "#7ab87a",
-  message: "#e5dfd3",
-  approval_needed: "#d4854a",
-  completed: "#7ab87a",
-  error: "#c75450",
-}
-
 const STATUS_COLORS: Record<string, string> = {
   idle: "#5a5650",
   working: "#7ab87a",
@@ -24,6 +14,12 @@ const STATUS_COLORS: Record<string, string> = {
   meeting: "#9b7ed8",
   error: "#c75450",
   has_report: "#d4854a",
+}
+
+const EVENT_COLORS: Record<string, string> = {
+  thinking: "#c89b3c",
+  tool_call: "#7ab87a",
+  tool_result: "#7ab87a",
 }
 
 const formatTime = (timestamp: Date) =>
@@ -40,62 +36,6 @@ const formatDuration = (events: AgentEvent[]) => {
   const last = new Date(events[events.length - 1].timestamp).getTime()
   const seconds = Math.round((last - first) / 1000)
   return `${seconds}s`
-}
-
-type ConversationGroup = {
-  userMessage: string | null
-  internalEvents: AgentEvent[]
-  agentResponse: string | null
-  isProcessing: boolean
-}
-
-const groupEventsIntoConversation = (
-  events: AgentEvent[],
-  pendingMessage: string | null
-): ConversationGroup => {
-  const userMessageEvent = events.find((e) => e.type === "user_message")
-  const userMessage = pendingMessage ?? userMessageEvent?.content ?? null
-
-  const internalEvents = events.filter(
-    (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
-  )
-
-  const responseEvents = events.filter((e) => e.type === "message")
-
-  const agentResponse =
-    responseEvents.length > 0
-      ? responseEvents.map((e) => e.content).join("\n\n")
-      : null
-
-  const hasTerminalEvent = events.some(
-    (e) => e.type === "completed" || e.type === "error"
-  )
-
-  const isProcessing = events.length > 0 && !hasTerminalEvent
-
-  return {
-    userMessage,
-    internalEvents,
-    agentResponse,
-    isProcessing,
-  }
-}
-
-const EventItem = ({ event }: { event: AgentEvent }) => {
-  const color = EVENT_COLORS[event.type] ?? "#5a5650"
-
-  return (
-    <div className="py-2 px-3" style={{ borderLeft: `2px solid ${color}` }}>
-      <div className="flex items-center gap-2 font-mono text-[10px]">
-        <span className="text-sand">{formatTime(event.timestamp)}</span>
-        <span style={{ color }}>{event.type}</span>
-      </div>
-      <div className="text-[12px] text-cream/70 mt-1 leading-relaxed line-clamp-3">
-        {event.content.slice(0, 200)}
-        {event.content.length > 200 && "..."}
-      </div>
-    </div>
-  )
 }
 
 const UserBubble = ({ message }: { message: string }) => (
@@ -115,6 +55,22 @@ const AgentBubble = ({ content }: { content: string }) => (
     </div>
   </div>
 )
+
+const EventItem = ({ event }: { event: AgentEvent }) => {
+  const color = EVENT_COLORS[event.type] ?? "#5a5650"
+  return (
+    <div className="py-2 px-3" style={{ borderLeft: `2px solid ${color}` }}>
+      <div className="flex items-center gap-2 font-mono text-[10px]">
+        <span className="text-sand">{formatTime(event.timestamp)}</span>
+        <span style={{ color }}>{event.type}</span>
+      </div>
+      <div className="text-[12px] text-cream/70 mt-1 leading-relaxed line-clamp-3">
+        {event.content.slice(0, 200)}
+        {event.content.length > 200 && "..."}
+      </div>
+    </div>
+  )
+}
 
 const InternalDetails = ({ events }: { events: AgentEvent[] }) => {
   const [expanded, setExpanded] = useState(false)
@@ -162,7 +118,7 @@ const NewActivityPill = ({ onClick }: { onClick: () => void }) => (
 )
 
 export const ThoughtPanel = () => {
-  const { selectedAgentId, agents, events, selectAgent } = useOffice()
+  const { selectedAgentId, agents, events, conversation, clearConversation, selectAgent } = useOffice()
   const scrollRef = useRef<HTMLDivElement>(null)
   const isNearBottomRef = useRef(true)
   const [message, setMessage] = useState("")
@@ -170,7 +126,7 @@ export const ThoughtPanel = () => {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null)
   const [showNewActivity, setShowNewActivity] = useState(false)
   const [displayedAgentId, setDisplayedAgentId] = useState<string | null>(null)
-  const previousEventsLengthRef = useRef(0)
+  const previousContentLengthRef = useRef(0)
 
   const isOpen = !!selectedAgentId
 
@@ -190,25 +146,23 @@ export const ThoughtPanel = () => {
     const el = scrollRef.current
     if (!el) return
     isNearBottomRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 100
-    if (isNearBottomRef.current) {
-      setShowNewActivity(false)
-    }
+    if (isNearBottomRef.current) setShowNewActivity(false)
   }, [])
 
+  const contentLength = conversation.length + events.length + (pendingMessage ? 1 : 0)
+
   useEffect(() => {
-    if (events.length > previousEventsLengthRef.current) {
+    if (contentLength > previousContentLengthRef.current) {
       if (isNearBottomRef.current && scrollRef.current) {
         requestAnimationFrame(() => {
-          if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-          }
+          if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         })
-      } else if (previousEventsLengthRef.current > 0) {
+      } else if (previousContentLengthRef.current > 0) {
         setShowNewActivity(true)
       }
     }
-    previousEventsLengthRef.current = events.length
-  }, [events])
+    previousContentLengthRef.current = contentLength
+  }, [contentLength])
 
   useEffect(() => {
     if (pendingMessage && events.some((e) => e.type === "user_message")) {
@@ -223,9 +177,7 @@ export const ThoughtPanel = () => {
   }, [selectedAgentId, selectedAgent?.status])
 
   const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     setShowNewActivity(false)
   }, [])
 
@@ -238,9 +190,7 @@ export const ThoughtPanel = () => {
     setSending(true)
 
     requestAnimationFrame(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-      }
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     })
 
     try {
@@ -259,20 +209,23 @@ export const ThoughtPanel = () => {
     }
   }
 
-  const conversation = groupEventsIntoConversation(events, pendingMessage)
+  const internalEvents = events.filter(
+    (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
+  )
+  const responseEvents = events.filter((e) => e.type === "message")
+  const currentResponse = responseEvents.length > 0
+    ? responseEvents.map((e) => e.content).join("\n\n")
+    : null
+  const userMessageEvent = events.find((e) => e.type === "user_message")
+  const currentUserMessage = pendingMessage ?? userMessageEvent?.content ?? null
+  const isProcessing = events.length > 0 && !events.some((e) => e.type === "completed" || e.type === "error")
+  const hasContent = conversation.length > 0 || events.length > 0 || pendingMessage
+
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
 
   return (
-    <div
-      className={`overflow-hidden transition-[width] duration-300 ease-out ${
-        isOpen ? "w-[400px]" : "w-0"
-      }`}
-    >
-      <div
-        className={`w-[400px] min-w-[400px] bg-surface border-l border-edge flex flex-col h-full transition-all duration-300 ease-out ${
-          isOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"
-        }`}
-      >
+    <div className={`overflow-hidden transition-[width] duration-300 ease-out ${isOpen ? "w-[400px]" : "w-0"}`}>
+      <div className={`w-[400px] min-w-[400px] bg-surface border-l border-edge flex flex-col h-full transition-all duration-300 ease-out ${isOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"}`}>
         {selectedAgent && (
           <>
             <div className="p-5 border-b border-edge">
@@ -285,54 +238,58 @@ export const ThoughtPanel = () => {
                     {selectedAgent.name[0]}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[15px] text-cream leading-tight">
-                      {selectedAgent.name}
-                    </h3>
+                    <h3 className="font-semibold text-[15px] text-cream leading-tight">{selectedAgent.name}</h3>
                     <p className="text-xs text-sand mt-0.5">{selectedAgent.role}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => selectAgent(null)}
-                  className="text-mute hover:text-sand transition-colors p-1 -mr-1 -mt-0.5"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M11 3L3 11M3 3l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1">
+                  {conversation.length > 0 && (
+                    <button
+                      onClick={() => clearConversation()}
+                      className="text-mute hover:text-sand transition-colors p-1"
+                      title="Clear conversation"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2.5 4h9M5 4V3a1 1 0 011-1h2a1 1 0 011 1v1M8.5 6.5v4M5.5 6.5v4M3.5 4l.5 7a1 1 0 001 1h4a1 1 0 001-1l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => selectAgent(null)}
+                    className="text-mute hover:text-sand transition-colors p-1 -mr-1 -mt-0.5"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M11 3L3 11M3 3l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <div
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: statusColor }}
-                />
-                <span className="text-[11px] font-mono text-sand tracking-wide">
-                  {selectedAgent.status}
-                </span>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
+                <span className="text-[11px] font-mono text-sand tracking-wide">{selectedAgent.status}</span>
               </div>
             </div>
 
-            <div
-              ref={scrollRef}
-              onScroll={checkNearBottom}
-              className="flex-1 overflow-y-auto relative"
-            >
-              {events.length === 0 && !pendingMessage ? (
+            <div ref={scrollRef} onScroll={checkNearBottom} className="flex-1 overflow-y-auto relative">
+              {!hasContent ? (
                 <div className="flex flex-col items-center justify-center h-full px-6">
                   <p className="text-sm text-mute">No activity yet</p>
                   <p className="text-xs text-mute/60 mt-1">Send a message to start</p>
                 </div>
               ) : (
                 <div className="py-3 space-y-1">
-                  {conversation.userMessage && (
-                    <UserBubble message={conversation.userMessage} />
+                  {conversation.map((msg) =>
+                    msg.role === "user" ? (
+                      <UserBubble key={msg.id} message={msg.content} />
+                    ) : (
+                      <AgentBubble key={msg.id} content={msg.content} />
+                    )
                   )}
-                  {conversation.internalEvents.length > 0 && (
-                    <InternalDetails events={conversation.internalEvents} />
-                  )}
-                  {conversation.agentResponse && (
-                    <AgentBubble content={conversation.agentResponse} />
-                  )}
-                  {conversation.isProcessing && <TypingIndicator />}
+
+                  {currentUserMessage && <UserBubble message={currentUserMessage} />}
+                  {internalEvents.length > 0 && <InternalDetails events={internalEvents} />}
+                  {currentResponse && <AgentBubble content={currentResponse} />}
+                  {isProcessing && <TypingIndicator />}
                 </div>
               )}
               {showNewActivity && <NewActivityPill onClick={scrollToBottom} />}
