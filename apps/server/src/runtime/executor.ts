@@ -5,6 +5,7 @@ import { agents, taskRuns, events, meetingMessages, agentMemories, conversationM
 import { eq, and, desc, sql } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
+import { setDelegationContext } from "../tools/leader.js"
 import { eventBus } from "../events/event-bus.js"
 import type { AgentEventType, ToolDefinition } from "@ozap-office/shared"
 
@@ -212,6 +213,10 @@ export const executeAgent = async (
 
   const agentWithPrompt = { id: agent.id, systemPrompt }
 
+  if (agent.name === "Leader") {
+    setDelegationContext({ leaderAgentId: agentId, leaderTaskRunId: taskRun.id })
+  }
+
   const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools)
     .then(() => false)
     .catch(async (error) => {
@@ -233,6 +238,7 @@ export const executeAgent = async (
     }
   }
 
+  setDelegationContext(null)
   const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
   await updateAgentStatus(agentId, finalStatus)
   return taskRun
