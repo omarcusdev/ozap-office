@@ -56,7 +56,13 @@ export const MeetingPanel = () => {
 
   if (status !== "active") return null
 
-  let lastRound = -1
+  const roundBoundaries = new Set(
+    messages
+      .map((m) => ((m.metadata as Record<string, unknown>)?.round as number) ?? 0)
+      .filter((r, i, arr) => r > 0 && (i === 0 || r !== arr[i - 1]))
+  )
+
+  const seenRounds = new Set<number>()
 
   return (
     <div className="w-[450px] min-w-[450px] bg-surface border-l border-edge flex flex-col h-full">
@@ -92,10 +98,11 @@ export const MeetingPanel = () => {
         ) : (
           <div className="py-3 space-y-1">
             {messages.map((msg) => {
-              const round = ((msg.metadata as any)?.round as number) ?? 0
-              const phase = ((msg.metadata as any)?.phase as string) ?? "user"
-              const showRoundSeparator = round > lastRound && round > 0
-              lastRound = round
+              const meta = msg.metadata as Record<string, unknown>
+              const round = (meta?.round as number) ?? 0
+              const phase = (meta?.phase as string) ?? "user"
+              const showRoundSeparator = round > 0 && !seenRounds.has(round)
+              if (round > 0) seenRounds.add(round)
 
               const isUser = msg.sender === "user"
               const agent = !isUser ? agentMap.get(msg.sender) : null

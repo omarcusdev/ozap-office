@@ -12,7 +12,9 @@ const resolveWsUrl = () => {
   return `${protocol}//${window.location.host}/ws?key=${API_KEY}`
 }
 
-export const createWsClient = (onMessage: MessageHandler) => {
+type StatusHandler = (connected: boolean) => void
+
+export const createWsClient = (onMessage: MessageHandler, onStatusChange?: StatusHandler) => {
   const state = { ws: null as WebSocket | null, reconnectTimeout: null as ReturnType<typeof setTimeout> | null }
 
   const connect = () => {
@@ -20,7 +22,10 @@ export const createWsClient = (onMessage: MessageHandler) => {
     if (!url) return
     state.ws = new WebSocket(url)
 
-    state.ws.onopen = () => console.log("WebSocket connected")
+    state.ws.onopen = () => {
+      console.log("WebSocket connected")
+      onStatusChange?.(true)
+    }
 
     state.ws.onmessage = (event) => {
       try {
@@ -31,6 +36,7 @@ export const createWsClient = (onMessage: MessageHandler) => {
 
     state.ws.onclose = () => {
       console.log("WebSocket disconnected, reconnecting in 3s...")
+      onStatusChange?.(false)
       state.reconnectTimeout = setTimeout(connect, 3000)
     }
 

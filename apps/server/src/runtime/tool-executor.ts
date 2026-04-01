@@ -1,5 +1,5 @@
 import type { ToolDefinition } from "@ozap-office/shared"
-import { executeLeaderTool } from "../tools/leader.js"
+import { executeLeaderTool, type DelegationContext } from "../tools/leader.js"
 import { executeFinanceTool } from "../tools/finance.js"
 import { executeMemoryTool } from "../tools/memory.js"
 import { executeAdsTool } from "../tools/ads.js"
@@ -50,11 +50,12 @@ export const executeTool = async (
   agentId: string,
   toolName: string,
   toolInput: Record<string, unknown>,
-  availableTools: ToolDefinition[]
+  availableTools: ToolDefinition[],
+  delegationCtx?: DelegationContext
 ): Promise<ToolResult> => {
   try {
     if (LEADER_TOOLS.includes(toolName)) {
-      return executeLeaderTool(toolName, toolInput)
+      return executeLeaderTool(toolName, toolInput, delegationCtx)
     }
 
     if (FINANCE_TOOLS.includes(toolName)) {

@@ -42,7 +42,7 @@ export const api = {
     request<Meeting>("/api/meetings", { method: "POST", body: JSON.stringify({ topic }) }),
   getMeetingMessages: (id: string) => request<MeetingMessage[]>(`/api/meetings/${id}/messages`),
   sendMeetingMessage: (id: string, content: string) =>
-    request<{ userMessage: MeetingMessage; leaderResponse: string }>(`/api/meetings/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+    request<{ status: string }>(`/api/meetings/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
   getConversation: (agentId: string) =>
     request<ConversationMessage[]>(`/api/agents/${agentId}/conversation`),
   clearConversation: (agentId: string) =>

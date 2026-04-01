@@ -8,30 +8,22 @@ import type { AgentEventType } from "@ozap-office/shared"
 
 type ToolResult = { content: string; isError?: boolean }
 
-type DelegationContext = {
+export type DelegationContext = {
   leaderAgentId: string
   leaderTaskRunId: string
 }
 
-let activeDelegationContext: DelegationContext | null = null
-
-export const setDelegationContext = (ctx: DelegationContext | null) => {
-  activeDelegationContext = ctx
-}
-
 const emitDelegationEvent = async (
+  ctx: DelegationContext,
   type: AgentEventType,
   content: string,
   metadata: Record<string, unknown>
 ) => {
-  if (!activeDelegationContext) return
-  const { leaderAgentId, leaderTaskRunId } = activeDelegationContext
-
   const [event] = await db
     .insert(events)
     .values({
-      agentId: leaderAgentId,
-      taskRunId: leaderTaskRunId,
+      agentId: ctx.leaderAgentId,
+      taskRunId: ctx.leaderTaskRunId,
       type,
       content,
       metadata,
@@ -42,7 +34,7 @@ const emitDelegationEvent = async (
   eventBus.emit("agentEvent", event as any)
 }
 
-const askAgent = async (input: Record<string, unknown>): Promise<ToolResult> => {
+const askAgent = async (input: Record<string, unknown>, ctx?: DelegationContext): Promise<ToolResult> => {
   const agentId = input.agentId as string
   const question = input.question as string
 
@@ -56,21 +48,25 @@ const askAgent = async (input: Record<string, unknown>): Promise<ToolResult> => 
 
   const delegationId = nanoid(10)
 
-  await emitDelegationEvent("delegation_start", `Asking ${agent.name}: ${question}`, {
-    delegationId,
-    targetAgentId: agentId,
-    targetAgentName: agent.name,
-    question,
-  })
+  if (ctx) {
+    await emitDelegationEvent(ctx, "delegation_start", `Asking ${agent.name}: ${question}`, {
+      delegationId,
+      targetAgentId: agentId,
+      targetAgentName: agent.name,
+      question,
+    })
+  }
 
   const response = await executeAgentForMeeting(agentId, question)
 
-  await emitDelegationEvent("delegation_response", response, {
-    delegationId,
-    targetAgentId: agentId,
-    targetAgentName: agent.name,
-    response,
-  })
+  if (ctx) {
+    await emitDelegationEvent(ctx, "delegation_response", response, {
+      delegationId,
+      targetAgentId: agentId,
+      targetAgentName: agent.name,
+      response,
+    })
+  }
 
   return { content: response }
 }
@@ -101,7 +97,7 @@ const getAgentHistory = async (input: Record<string, unknown>): Promise<ToolResu
   }
 }
 
-const delegateTask = async (input: Record<string, unknown>): Promise<ToolResult> => {
+const delegateTask = async (input: Record<string, unknown>, ctx?: DelegationContext): Promise<ToolResult> => {
   const agentId = input.agentId as string
   const task = input.task as string
 
@@ -110,12 +106,14 @@ const delegateTask = async (input: Record<string, unknown>): Promise<ToolResult>
 
   const delegationId = nanoid(10)
 
-  await emitDelegationEvent("delegation_start", `Delegating to ${agent.name}: ${task}`, {
-    delegationId,
-    targetAgentId: agentId,
-    targetAgentName: agent.name,
-    task,
-  })
+  if (ctx) {
+    await emitDelegationEvent(ctx, "delegation_start", `Delegating to ${agent.name}: ${task}`, {
+      delegationId,
+      targetAgentId: agentId,
+      targetAgentName: agent.name,
+      task,
+    })
+  }
 
   const { executeAgent } = await import("../runtime/executor.js")
   const taskRun = await executeAgent(agentId, "manual", task)
@@ -123,21 +121,24 @@ const delegateTask = async (input: Record<string, unknown>): Promise<ToolResult>
   const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
   const output = completedRun?.output as { result?: string } | null
 
-  await emitDelegationEvent("delegation_response", output?.result ?? "Task completed", {
-    delegationId,
-    targetAgentId: agentId,
-    targetAgentName: agent.name,
-    response: output?.result ?? "Task completed",
-  })
+  if (ctx) {
+    await emitDelegationEvent(ctx, "delegation_response", output?.result ?? "Task completed", {
+      delegationId,
+      targetAgentId: agentId,
+      targetAgentName: agent.name,
+      response: output?.result ?? "Task completed",
+    })
+  }
 
   return { content: `Task delegated and completed. Response: ${output?.result ?? "Task completed"}` }
 }
 
 export const executeLeaderTool = async (
   toolName: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  delegationCtx?: DelegationContext
 ): Promise<ToolResult> => {
-  const tools: Record<string, (input: Record<string, unknown>) => Promise<ToolResult>> = {
+  const tools: Record<string, (input: Record<string, unknown>, ctx?: DelegationContext) => Promise<ToolResult>> = {
     askAgent,
     getAgentHistory,
     delegateTask,
@@ -146,5 +147,5 @@ export const executeLeaderTool = async (
   const handler = tools[toolName]
   if (!handler) return { content: `Unknown leader tool: ${toolName}`, isError: true }
 
-  return handler(input)
+  return handler(input, delegationCtx)
 }

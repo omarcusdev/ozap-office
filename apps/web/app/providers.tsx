@@ -40,8 +40,7 @@ const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    const client = createWsClient(handleMessage)
-    setConnected(true)
+    const client = createWsClient(handleMessage, setConnected)
 
     return () => {
       client.disconnect()

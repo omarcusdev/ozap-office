@@ -6,6 +6,7 @@ import { useEventStore } from "@/lib/stores/event-store"
 import { useConversationStore } from "@/lib/stores/conversation-store"
 import { useAgentsQuery } from "@/lib/queries/agent-queries"
 import { useConversationQuery, useClearConversationMutation, useSendMessageMutation } from "@/lib/queries/conversation-queries"
+import { useSessionsQuery } from "@/lib/queries/session-queries"
 import { MarkdownRenderer } from "./markdown-renderer"
 import { SessionPicker } from "./session-picker"
 import { DelegationThread, groupDelegationEvents } from "./delegation-thread"
@@ -127,9 +128,11 @@ export const ThoughtPanel = () => {
   const agents = useAgentStore((s) => s.agents)
   const events = useEventStore((s) => s.events)
   const conversation = useConversationStore((s) => s.messages)
+  const activeSessionId = useConversationStore((s) => s.activeSessionId)
 
   useAgentsQuery()
-  useConversationQuery(selectedAgentId, null)
+  useConversationQuery(selectedAgentId, activeSessionId)
+  useSessionsQuery(selectedAgentId)
 
   const clearConversationMutation = useClearConversationMutation(selectedAgentId)
   const sendMessageMutation = useSendMessageMutation()

@@ -1,11 +1,10 @@
-import { nanoid } from "nanoid"
 import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
-import { agents, taskRuns, events, meetingMessages, agentMemories, conversationMessages, conversationSessions } from "../db/schema.js"
+import { agents, taskRuns, events, agentMemories, conversationMessages, conversationSessions } from "../db/schema.js"
 import { eq, and, desc, sql } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
-import { setDelegationContext } from "../tools/leader.js"
+import type { DelegationContext } from "../tools/leader.js"
 import { eventBus } from "../events/event-bus.js"
 import type { AgentEventType, ToolDefinition } from "@ozap-office/shared"
 
@@ -176,11 +175,8 @@ export const executeAgent = async (
   if (!agent) throw new Error(`Agent ${agentId} not found`)
 
   const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
-  let systemPrompt = buildDateContext() + "\n\n" + agent.systemPrompt + coreMemoryBlock
-
-  if (agent.name === "Leader") {
-    systemPrompt += await buildTeamRosterBlock(agentId)
-  }
+  const teamRoster = agent.name === "Leader" ? await buildTeamRosterBlock(agentId) : ""
+  const systemPrompt = buildDateContext() + "\n\n" + agent.systemPrompt + coreMemoryBlock + teamRoster
 
   const [taskRun] = await db
     .insert(taskRuns)
@@ -212,12 +208,11 @@ export const executeAgent = async (
   }
 
   const agentWithPrompt = { id: agent.id, systemPrompt }
+  const delegationCtx = agent.name === "Leader"
+    ? { leaderAgentId: agentId, leaderTaskRunId: taskRun.id } as DelegationContext
+    : undefined
 
-  if (agent.name === "Leader") {
-    setDelegationContext({ leaderAgentId: agentId, leaderTaskRunId: taskRun.id })
-  }
-
-  const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools)
+  const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools, delegationCtx)
     .then(() => false)
     .catch(async (error) => {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -238,7 +233,6 @@ export const executeAgent = async (
     }
   }
 
-  setDelegationContext(null)
   const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
   await updateAgentStatus(agentId, finalStatus)
   return taskRun
@@ -249,7 +243,8 @@ const runAgenticLoop = async (
   taskRunId: string,
   messages: Message[],
   agentTools: ToolDefinition[],
-  bedrockTools: any[]
+  bedrockTools: any[],
+  delegationCtx?: DelegationContext
 ): Promise<void> => {
   await updateAgentStatus(agent.id, "thinking")
   await emitEvent(agent.id, taskRunId, "thinking", "Processing...")
@@ -283,7 +278,8 @@ const runAgenticLoop = async (
         agent.id,
         toolUse.name!,
         toolUse.input as Record<string, unknown>,
-        agentTools
+        agentTools,
+        delegationCtx
       )
 
       await emitEvent(agent.id, taskRunId, "tool_result", toolResult.content, {
@@ -301,7 +297,7 @@ const runAgenticLoop = async (
     }
 
     messages.push({ role: "user", content: toolResultContents })
-    return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools)
+    return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools, delegationCtx)
   }
 
   await db
@@ -365,45 +361,3 @@ export const resumeAfterApproval = async (taskRunId: string, action: "approve" |
   await updateAgentStatus(run.agentId, "idle")
 }
 
-export const handleMeetingMessage = async (
-  meetingId: string,
-  userMessage: string
-): Promise<string> => {
-  const [leader] = await db.select().from(agents).where(eq(agents.name, "Leader"))
-  if (!leader) return "Leader agent not found"
-
-  const prompt = `You are in a team meeting. The user said: "${userMessage}". Use your tools to gather information from other agents and provide a comprehensive response.`
-
-  const agentTools = leader.tools as ToolDefinition[]
-  const bedrockTools = buildBedrockTools(agentTools)
-  const messages: Message[] = [{ role: "user", content: [{ text: prompt }] }]
-
-  const [taskRun] = await db
-    .insert(taskRuns)
-    .values({ agentId: leader.id, trigger: "meeting", status: "running", startedAt: new Date() })
-    .returning()
-
-  await runAgenticLoop(leader, taskRun.id, messages, agentTools, bedrockTools)
-
-  const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
-  const output = completedRun?.output as { result?: string } | null
-  const responseContent = output?.result ?? "Meeting response generated"
-
-  await db.insert(meetingMessages).values({
-    meetingId,
-    sender: leader.id,
-    content: responseContent,
-    timestamp: new Date(),
-  })
-
-  eventBus.emit("meetingMessage", {
-    id: nanoid(),
-    meetingId,
-    sender: leader.id,
-    content: responseContent,
-    metadata: {},
-    timestamp: new Date(),
-  })
-
-  return responseContent
-}

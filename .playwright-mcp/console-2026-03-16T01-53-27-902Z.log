@@ -1,0 +1,3 @@
+[    3088ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/api/agents:0
+[    3092ms] Error: API error: 404 Not Found
+    at request (webpack-internal:///(app-pages-browser)/./lib/api-client.ts:21:15)

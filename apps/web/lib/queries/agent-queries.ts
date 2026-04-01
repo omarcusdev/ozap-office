@@ -14,7 +14,15 @@ export const useAgentsQuery = () => {
 
   useEffect(() => {
     if (query.data) {
-      setAgents(query.data as any)
+      setAgents(query.data.map((a) => ({
+        id: a.id,
+        name: a.name,
+        role: a.role,
+        color: a.color,
+        positionX: (a as any).positionX ?? a.position?.x ?? 0,
+        positionY: (a as any).positionY ?? a.position?.y ?? 0,
+        status: a.status,
+      })))
     }
   }, [query.data, setAgents])
 
