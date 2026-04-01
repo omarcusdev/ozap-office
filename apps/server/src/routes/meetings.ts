@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify"
 import { db } from "../db/client.js"
 import { meetings, meetingMessages } from "../db/schema.js"
 import { eq } from "drizzle-orm"
-import { handleMeetingMessage } from "../runtime/executor.js"
+import { processMeetingMessage, completeMeeting } from "../runtime/meeting-engine.js"
 
 export const registerMeetingRoutes = (server: FastifyInstance) => {
   server.post<{ Body: { topic?: string } }>("/api/meetings", async (request) => {
@@ -33,18 +33,15 @@ export const registerMeetingRoutes = (server: FastifyInstance) => {
     const { id } = request.params
     const { content } = request.body
 
-    const [userMessage] = await db
-      .insert(meetingMessages)
-      .values({
-        meetingId: id,
-        sender: "user",
-        content,
-        timestamp: new Date(),
-      })
-      .returning()
+    processMeetingMessage(id, content).catch((err) => {
+      console.error("Meeting message processing failed:", err)
+    })
 
-    const leaderResponse = await handleMeetingMessage(id, content)
+    return { status: "processing" }
+  })
 
-    return { userMessage, leaderResponse }
+  server.post<{ Params: { id: string } }>("/api/meetings/:id/complete", async (request) => {
+    await completeMeeting(request.params.id)
+    return { status: "ok" }
   })
 }
