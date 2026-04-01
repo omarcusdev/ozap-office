@@ -36,6 +36,13 @@
       "when": 1775052703855,
       "tag": "0004_wet_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775055705054,
+      "tag": "0005_wealthy_blur",
+      "breakpoints": true
     }
   ]
 }

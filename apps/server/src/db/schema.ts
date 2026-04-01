@@ -65,6 +65,8 @@ export const meetingMessages = pgTable("meeting_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   meetingId: uuid("meeting_id").notNull().references(() => meetings.id),
   sender: text("sender").notNull(),
+  agentId: uuid("agent_id").references(() => agents.id),
+  round: integer("round").default(1),
   content: text("content").notNull(),
   metadata: jsonb("metadata").default(sql`'{}'`),
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
@@ -80,11 +82,26 @@ export const approvals = pgTable("approvals", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
 
+export const conversationSessions = pgTable(
+  "conversation_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: uuid("agent_id").notNull().references(() => agents.id),
+    title: text("title"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("conversation_sessions_agent_idx").on(table.agentId, table.updatedAt),
+  ]
+)
+
 export const conversationMessages = pgTable(
   "conversation_messages",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     agentId: uuid("agent_id").notNull().references(() => agents.id),
+    sessionId: uuid("session_id").references(() => conversationSessions.id),
     role: text("role").notNull(),
     content: text("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

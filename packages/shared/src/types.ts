@@ -45,6 +45,8 @@ export type AgentEventType =
   | "approval_needed"
   | "completed"
   | "error"
+  | "delegation_start"
+  | "delegation_response"
 
 export type AgentEvent = {
   id: string
@@ -83,7 +85,9 @@ export type MeetingMessage = {
   id: string
   meetingId: string
   sender: string
+  agentId?: string | null
   content: string
+  round?: number
   metadata: Record<string, unknown>
   timestamp: Date
 }
