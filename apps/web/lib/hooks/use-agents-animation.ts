@@ -1,19 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { api } from "./api-client"
-import { MEETING_ROUTES } from "./canvas/tile-map"
+import { useCallback, useRef, useEffect, useState } from "react"
+import { useAgentStore } from "@/lib/stores/agent-store"
+import { MEETING_ROUTES } from "@/lib/canvas/tile-map"
 import type { AgentStatus } from "@ozap-office/shared"
-
-type AgentState = {
-  id: string
-  name: string
-  role: string
-  color: string
-  positionX: number
-  positionY: number
-  status: AgentStatus
-}
 
 type AnimationType = "idle" | "walk" | "typing" | "reading"
 type Direction = "down" | "up" | "right" | "left"
@@ -65,10 +55,10 @@ const computeDirection = (dx: number, dy: number): Direction => {
   return dy > 0 ? "down" : "up"
 }
 
-export const useAgents = () => {
-  const [agents, setAgents] = useState<AgentState[]>([])
-  const [loading, setLoading] = useState(true)
+export const useAgentsAnimation = () => {
+  const agents = useAgentStore((s) => s.agents)
   const [inMeeting, setInMeeting] = useState(false)
+
   const renderPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
   const originalPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
   const waypointStatesRef = useRef<Record<string, WaypointState>>({})
@@ -78,39 +68,38 @@ export const useAgents = () => {
   const previousPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
   const animationStartRef = useRef<number>(0)
   const [renderTick, setRenderTick] = useState(0)
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    api.getAgents().then((data) => {
-      const agentData = data as unknown as AgentState[]
-      setAgents(agentData)
-      setLoading(false)
-      const positions: Record<string, { x: number; y: number }> = {}
-      const originals: Record<string, { x: number; y: number }> = {}
-      for (const agent of agentData) {
-        positions[agent.id] = { x: agent.positionX, y: agent.positionY }
-        originals[agent.id] = { x: agent.positionX, y: agent.positionY }
-      }
-      renderPositionsRef.current = positions
-      originalPositionsRef.current = originals
+    if (agents.length === 0 || initializedRef.current) return
+    initializedRef.current = true
 
-      const assignments: Record<string, { paletteIndex: number; hueShift: number }> = {}
-      const paletteCounts = Array(6).fill(0)
+    const positions: Record<string, { x: number; y: number }> = {}
+    const originals: Record<string, { x: number; y: number }> = {}
+    for (const agent of agents) {
+      positions[agent.id] = { x: agent.positionX, y: agent.positionY }
+      originals[agent.id] = { x: agent.positionX, y: agent.positionY }
+    }
+    renderPositionsRef.current = positions
+    originalPositionsRef.current = originals
 
-      for (let i = 0; i < agentData.length; i++) {
-        if (i < 6) {
-          assignments[agentData[i].id] = { paletteIndex: i, hueShift: 0 }
-          paletteCounts[i]++
-        } else {
-          const minCount = Math.min(...paletteCounts)
-          const leastUsedIdx = paletteCounts.indexOf(minCount)
-          const hueShift = HUE_SHIFT_MIN + Math.floor(Math.random() * HUE_SHIFT_RANGE)
-          assignments[agentData[i].id] = { paletteIndex: leastUsedIdx, hueShift }
-          paletteCounts[leastUsedIdx]++
-        }
+    const assignments: Record<string, { paletteIndex: number; hueShift: number }> = {}
+    const paletteCounts = Array(6).fill(0)
+
+    for (const [i, agent] of agents.entries()) {
+      if (i < 6) {
+        assignments[agent.id] = { paletteIndex: i, hueShift: 0 }
+        paletteCounts[i]++
+      } else {
+        const minCount = Math.min(...paletteCounts)
+        const leastUsedIdx = paletteCounts.indexOf(minCount)
+        const hueShift = HUE_SHIFT_MIN + Math.floor(Math.random() * HUE_SHIFT_RANGE)
+        assignments[agent.id] = { paletteIndex: leastUsedIdx, hueShift }
+        paletteCounts[leastUsedIdx]++
       }
-      paletteAssignmentsRef.current = assignments
-    })
-  }, [])
+    }
+    paletteAssignmentsRef.current = assignments
+  }, [agents])
 
   useEffect(() => {
     const animate = (now: number) => {
@@ -217,12 +206,6 @@ export const useAgents = () => {
     return () => cancelAnimationFrame(frameId)
   }, [agents])
 
-  const updateAgentStatus = useCallback((agentId: string, status: AgentStatus) => {
-    setAgents((prev) =>
-      prev.map((a) => (a.id === agentId ? { ...a, status } : a))
-    )
-  }, [])
-
   const callMeeting = useCallback(() => {
     const wpStates: Record<string, WaypointState> = {}
     const positions = renderPositionsRef.current
@@ -302,5 +285,5 @@ export const useAgents = () => {
     return result
   }, [renderTick])
 
-  return { agents, loading, updateAgentStatus, inMeeting, callMeeting, endMeeting, getRenderPositions }
+  return { inMeeting, callMeeting, endMeeting, getRenderPositions }
 }

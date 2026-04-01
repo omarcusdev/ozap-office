@@ -1,12 +1,13 @@
 "use client"
 
-import { OfficeProvider, useOffice } from "./providers"
+import { OfficeProvider } from "./providers"
 import { OfficeCanvas } from "@/lib/components/office-canvas"
 import { ThoughtPanel } from "@/lib/components/thought-panel"
 import { StatusBar } from "@/lib/components/status-bar"
+import { useAgentsAnimation } from "@/lib/hooks/use-agents-animation"
 
 const MeetingButton = () => {
-  const { inMeeting, callMeeting, endMeeting } = useOffice()
+  const { inMeeting, callMeeting, endMeeting } = useAgentsAnimation()
 
   return (
     <button

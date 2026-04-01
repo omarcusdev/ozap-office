@@ -1,72 +1,59 @@
 "use client"
 
-import { createContext, useContext, useCallback, useState, type ReactNode } from "react"
-import { useWebSocket } from "@/lib/use-websocket"
-import { useAgents, type RenderAgent } from "@/lib/use-agents"
-import { useEvents } from "@/lib/use-events"
-import { useConversation } from "@/lib/use-conversation"
-import type { WsServerMessage, AgentEvent, ConversationMessage } from "@ozap-office/shared"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useRef, useEffect, type ReactNode } from "react"
+import { createWsClient } from "@/lib/ws-client"
+import { useAgentStore } from "@/lib/stores/agent-store"
+import { useEventStore } from "@/lib/stores/event-store"
+import { useMeetingStore } from "@/lib/stores/meeting-store"
+import { useWsStore } from "@/lib/stores/ws-store"
+import type { WsServerMessage } from "@ozap-office/shared"
 
-type OfficeContextType = {
-  agents: ReturnType<typeof useAgents>["agents"]
-  loading: boolean
-  selectedAgentId: string | null
-  selectAgent: (id: string | null) => void
-  conversation: ConversationMessage[]
-  clearConversation: () => Promise<void>
-  events: AgentEvent[]
-  inMeeting: boolean
-  callMeeting: () => void
-  endMeeting: () => void
-  getRenderPositions: () => Record<string, RenderAgent>
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
-const OfficeContext = createContext<OfficeContextType | null>(null)
+const WebSocketProvider = ({ children }: { children: ReactNode }) => {
+  const updateStatus = useAgentStore((s) => s.updateStatus)
+  const selectedAgentId = useAgentStore((s) => s.selectedAgentId)
+  const addEvent = useEventStore((s) => s.addEvent)
+  const addMeetingMessage = useMeetingStore((s) => s.addMessage)
+  const setConnected = useWsStore((s) => s.setConnected)
+  const selectedAgentIdRef = useRef(selectedAgentId)
+  selectedAgentIdRef.current = selectedAgentId
 
-export const useOffice = () => {
-  const ctx = useContext(OfficeContext)
-  if (!ctx) throw new Error("useOffice must be used within OfficeProvider")
-  return ctx
-}
-
-export const OfficeProvider = ({ children }: { children: ReactNode }) => {
-  const { agents, loading, updateAgentStatus, inMeeting, callMeeting, endMeeting, getRenderPositions } = useAgents()
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const { conversation, refreshConversation, clearConversation } = useConversation(selectedAgentId)
-  const { events, addEvent } = useEvents(selectedAgentId, refreshConversation)
-
-  const handleWsMessage = useCallback(
-    (message: WsServerMessage) => {
+  useEffect(() => {
+    const handleMessage = (message: WsServerMessage) => {
       if (message.type === "agent_status") {
-        updateAgentStatus(message.payload.agentId, message.payload.status)
+        updateStatus(message.payload.agentId, message.payload.status)
       } else if (message.type === "agent_event") {
-        if (message.payload.agentId === selectedAgentId) {
+        if (message.payload.agentId === selectedAgentIdRef.current) {
           addEvent(message.payload)
         }
+      } else if (message.type === "meeting_message") {
+        addMeetingMessage(message.payload)
       }
-    },
-    [updateAgentStatus, addEvent, selectedAgentId]
-  )
+    }
 
-  useWebSocket(handleWsMessage)
+    const client = createWsClient(handleMessage)
+    setConnected(true)
 
-  return (
-    <OfficeContext.Provider
-      value={{
-        agents,
-        loading,
-        selectedAgentId,
-        selectAgent: setSelectedAgentId,
-        conversation,
-        clearConversation,
-        events,
-        inMeeting,
-        callMeeting,
-        endMeeting,
-        getRenderPositions,
-      }}
-    >
-      {children}
-    </OfficeContext.Provider>
-  )
+    return () => {
+      client.disconnect()
+      setConnected(false)
+    }
+  }, [updateStatus, addEvent, addMeetingMessage, setConnected])
+
+  return <>{children}</>
 }
+
+export const OfficeProvider = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={queryClient}>
+    <WebSocketProvider>{children}</WebSocketProvider>
+  </QueryClientProvider>
+)

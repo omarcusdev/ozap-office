@@ -1,5 +1,13 @@
 import type { AgentConfig, AgentEvent, Approval, ConversationMessage, Meeting, MeetingMessage, TaskRun } from "@ozap-office/shared"
 
+type ConversationSession = {
+  id: string
+  agentId: string
+  title: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
 
@@ -45,4 +53,14 @@ export const api = {
     request<TaskRun>(`/api/agents/${agentId}/latest-run`),
   getTaskRunEvents: (agentId: string, taskRunId: string) =>
     request<AgentEvent[]>(`/api/agents/${agentId}/events?taskRunId=${taskRunId}`),
+  getSessions: (agentId: string) =>
+    request<ConversationSession[]>(`/api/agents/${agentId}/sessions`),
+  createSession: (agentId: string) =>
+    request<ConversationSession>(`/api/agents/${agentId}/sessions`, { method: "POST" }),
+  deleteSession: (agentId: string, sessionId: string) =>
+    request<{ status: string }>(`/api/agents/${agentId}/sessions/${sessionId}`, { method: "DELETE" }),
+  getSessionMessages: (agentId: string, sessionId: string) =>
+    request<ConversationMessage[]>(`/api/agents/${agentId}/sessions/${sessionId}/messages`),
+  completeMeeting: (meetingId: string) =>
+    request<{ status: string }>(`/api/meetings/${meetingId}/complete`, { method: "POST" }),
 }

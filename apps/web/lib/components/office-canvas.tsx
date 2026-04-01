@@ -4,7 +4,8 @@ import { useRef, useEffect, useCallback, useState } from "react"
 import { renderOffice, hitTest } from "@/lib/canvas/office-renderer"
 import type { AgentRenderData } from "@/lib/canvas/office-renderer"
 import { loadAllAssets, type AssetBundle } from "@/lib/canvas/sprite-loader"
-import { useOffice } from "@/app/providers"
+import { useAgentStore } from "@/lib/stores/agent-store"
+import { useAgentsAnimation } from "@/lib/hooks/use-agents-animation"
 import { CANVAS_CONFIG } from "@/lib/canvas/coordinates"
 
 const buildAnimatedAgents = (
@@ -43,7 +44,9 @@ const buildAnimatedAgents = (
 export const OfficeCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameIdRef = useRef<number>(0)
-  const { agents, selectAgent, getRenderPositions } = useOffice()
+  const agents = useAgentStore((s) => s.agents)
+  const selectAgent = useAgentStore((s) => s.selectAgent)
+  const { getRenderPositions } = useAgentsAnimation()
   const [assets, setAssets] = useState<AssetBundle | null>(null)
 
   useEffect(() => {

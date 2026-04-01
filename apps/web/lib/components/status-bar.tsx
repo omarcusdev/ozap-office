@@ -1,6 +1,6 @@
 "use client"
 
-import { useOffice } from "@/app/providers"
+import { useAgentStore } from "@/lib/stores/agent-store"
 
 const StatusDot = ({ count, label, color }: { count: number; label: string; color: string }) => (
   <div className="flex items-center gap-2">
@@ -13,7 +13,7 @@ const StatusDot = ({ count, label, color }: { count: number; label: string; colo
 )
 
 export const StatusBar = () => {
-  const { agents } = useOffice()
+  const agents = useAgentStore((s) => s.agents)
 
   const counts = agents.reduce(
     (acc, a) => {

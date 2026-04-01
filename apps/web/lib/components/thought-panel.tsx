@@ -1,8 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import Markdown from "react-markdown"
-import { useOffice } from "@/app/providers"
+import { useAgentStore } from "@/lib/stores/agent-store"
+import { useEventStore } from "@/lib/stores/event-store"
+import { useConversationStore } from "@/lib/stores/conversation-store"
+import { useAgentsQuery } from "@/lib/queries/agent-queries"
+import { useConversationQuery, useClearConversationMutation, useSendMessageMutation } from "@/lib/queries/conversation-queries"
+import { MarkdownRenderer } from "./markdown-renderer"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
@@ -49,9 +53,7 @@ const UserBubble = ({ message }: { message: string }) => (
 const AgentBubble = ({ content }: { content: string }) => (
   <div className="flex justify-start px-4 py-2">
     <div className="max-w-[90%] bg-raised border border-edge-light rounded-lg rounded-bl-sm px-3.5 py-2.5">
-      <div className="text-[13px] text-cream/90 leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-hr:my-2 prose-strong:text-cream prose-headings:text-cream">
-        <Markdown>{content}</Markdown>
-      </div>
+      <MarkdownRenderer content={content} />
     </div>
   </div>
 )
@@ -118,7 +120,18 @@ const NewActivityPill = ({ onClick }: { onClick: () => void }) => (
 )
 
 export const ThoughtPanel = () => {
-  const { selectedAgentId, agents, events, conversation, clearConversation, selectAgent } = useOffice()
+  const selectedAgentId = useAgentStore((s) => s.selectedAgentId)
+  const selectAgent = useAgentStore((s) => s.selectAgent)
+  const agents = useAgentStore((s) => s.agents)
+  const events = useEventStore((s) => s.events)
+  const conversation = useConversationStore((s) => s.messages)
+
+  useAgentsQuery()
+  useConversationQuery(selectedAgentId, null)
+
+  const clearConversationMutation = useClearConversationMutation(selectedAgentId)
+  const sendMessageMutation = useSendMessageMutation()
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const isNearBottomRef = useRef(true)
   const [message, setMessage] = useState("")
@@ -194,7 +207,7 @@ export const ThoughtPanel = () => {
     })
 
     try {
-      await api.triggerAgent(selectedAgentId, trimmed)
+      await sendMessageMutation.mutateAsync({ agentId: selectedAgentId, message: trimmed })
     } catch (err) {
       console.error("Failed to send:", err)
       setPendingMessage(null)
@@ -245,7 +258,7 @@ export const ThoughtPanel = () => {
                 <div className="flex items-center gap-1">
                   {conversation.length > 0 && (
                     <button
-                      onClick={() => clearConversation()}
+                      onClick={() => clearConversationMutation.mutate()}
                       className="text-mute hover:text-sand transition-colors p-1"
                       title="Clear conversation"
                     >
