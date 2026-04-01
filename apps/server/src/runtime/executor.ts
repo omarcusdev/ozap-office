@@ -1,8 +1,8 @@
 import { nanoid } from "nanoid"
 import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
-import { agents, taskRuns, events, meetingMessages, agentMemories, conversationMessages } from "../db/schema.js"
-import { eq, and, desc } from "drizzle-orm"
+import { agents, taskRuns, events, meetingMessages, agentMemories, conversationMessages, conversationSessions } from "../db/schema.js"
+import { eq, and, desc, sql } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
 import { eventBus } from "../events/event-bus.js"
@@ -89,11 +89,40 @@ const buildTeamRosterBlock = async (currentAgentId: string): Promise<string> => 
   return `\n\n## Your Team\nUse the agent IDs below with askAgent, getAgentHistory, or delegateTask:\n${entries}`
 }
 
+const getOrCreateSession = async (agentId: string): Promise<string> => {
+  const [existing] = await db
+    .select()
+    .from(conversationSessions)
+    .where(eq(conversationSessions.agentId, agentId))
+    .orderBy(desc(conversationSessions.updatedAt))
+    .limit(1)
+
+  if (existing) return existing.id
+
+  const [session] = await db
+    .insert(conversationSessions)
+    .values({ agentId })
+    .returning()
+  return session.id
+}
+
 const loadConversationHistory = async (agentId: string): Promise<Message[]> => {
+  const [latestSession] = await db
+    .select()
+    .from(conversationSessions)
+    .where(eq(conversationSessions.agentId, agentId))
+    .orderBy(desc(conversationSessions.updatedAt))
+    .limit(1)
+
+  const conditions = [eq(conversationMessages.agentId, agentId)]
+  if (latestSession) {
+    conditions.push(eq(conversationMessages.sessionId, latestSession.id))
+  }
+
   const rows = await db
     .select()
     .from(conversationMessages)
-    .where(eq(conversationMessages.agentId, agentId))
+    .where(and(...conditions))
     .orderBy(desc(conversationMessages.createdAt))
     .limit(20)
 
@@ -115,11 +144,15 @@ const loadConversationHistory = async (agentId: string): Promise<Message[]> => {
   }))
 }
 
-const saveConversationTurn = async (agentId: string, userMessage: string, assistantResponse: string) => {
+const saveConversationTurn = async (agentId: string, sessionId: string, userMessage: string, assistantResponse: string) => {
   await db.insert(conversationMessages).values([
-    { agentId, role: "user", content: userMessage },
-    { agentId, role: "assistant", content: assistantResponse },
+    { agentId, sessionId, role: "user", content: userMessage },
+    { agentId, sessionId, role: "assistant", content: assistantResponse },
   ])
+  await db
+    .update(conversationSessions)
+    .set({ title: userMessage.slice(0, 50), updatedAt: new Date() })
+    .where(and(eq(conversationSessions.id, sessionId), sql`title IS NULL`))
 }
 
 const extractToolUseBlocks = (content: ContentBlock[]) =>
@@ -195,7 +228,8 @@ export const executeAgent = async (
     const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
     const output = completedRun?.output as { result?: string } | null
     if (output?.result) {
-      await saveConversationTurn(agentId, inputContext, output.result)
+      const sessionId = await getOrCreateSession(agentId)
+      await saveConversationTurn(agentId, sessionId, inputContext, output.result)
     }
   }
 

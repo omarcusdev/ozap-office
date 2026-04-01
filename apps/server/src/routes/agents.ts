@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify"
 import { db } from "../db/client.js"
-import { agents, events, taskRuns, conversationMessages } from "../db/schema.js"
+import { agents, events, taskRuns, conversationMessages, conversationSessions } from "../db/schema.js"
 import { eq, gt, and, desc } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { eventBus } from "../events/event-bus.js"
@@ -81,4 +81,46 @@ export const registerAgentRoutes = (server: FastifyInstance) => {
 
     return { status: "ok" }
   })
+
+  server.get<{ Params: { id: string } }>("/api/agents/:id/sessions", async (request) => {
+    return db
+      .select()
+      .from(conversationSessions)
+      .where(eq(conversationSessions.agentId, request.params.id))
+      .orderBy(desc(conversationSessions.updatedAt))
+      .limit(50)
+  })
+
+  server.post<{ Params: { id: string } }>("/api/agents/:id/sessions", async (request) => {
+    const [session] = await db
+      .insert(conversationSessions)
+      .values({ agentId: request.params.id })
+      .returning()
+    return session
+  })
+
+  server.delete<{ Params: { id: string; sessionId: string } }>(
+    "/api/agents/:id/sessions/:sessionId",
+    async (request) => {
+      await db
+        .delete(conversationMessages)
+        .where(eq(conversationMessages.sessionId, request.params.sessionId))
+      await db
+        .delete(conversationSessions)
+        .where(eq(conversationSessions.id, request.params.sessionId))
+      return { status: "ok" }
+    }
+  )
+
+  server.get<{ Params: { id: string; sessionId: string } }>(
+    "/api/agents/:id/sessions/:sessionId/messages",
+    async (request) => {
+      return db
+        .select()
+        .from(conversationMessages)
+        .where(eq(conversationMessages.sessionId, request.params.sessionId))
+        .orderBy(conversationMessages.createdAt)
+        .limit(100)
+    }
+  )
 }
