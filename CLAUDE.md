@@ -68,7 +68,8 @@ All rendering is pure Canvas 2D drawing (no sprites/images). The rendering pipel
 `app/providers.tsx` contains the `OfficeProvider` context that wires:
 - `use-agents.ts` — fetches agent list, tracks status, handles meeting state, smooth agent position animation
 - `use-websocket.ts` — persistent WebSocket connection with reconnect
-- `use-events.ts` — per-agent event stream
+- `use-events.ts` — per-agent event stream for current execution
+- `use-conversation.ts` — persistent multi-turn conversation history per agent
 
 ## Environment Variables
 
@@ -88,7 +89,7 @@ See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `
 AWS_PROFILE=ozapgpt aws ssm send-command \
   --instance-ids i-025ac97362e218181 \
   --document-name "AWS-RunShellScript" \
-  --parameters '{"commands":["export PATH=/root/.local/share/pnpm:/root/.local/share/pnpm/global/5/node_modules/.bin:/root/.local/share/pnpm/nodejs/20.20.1/bin:$PATH && export HOME=/root","cd /opt/ozap-office && git pull","cd /opt/ozap-office && pnpm -F @ozap-office/shared build && pnpm -F @ozap-office/server build && NEXT_PUBLIC_API_URL= NEXT_PUBLIC_WS_URL= NEXT_PUBLIC_API_KEY=ozap-office-key-2026 pnpm -F @ozap-office/web build","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:migrate","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:seed","pm2 delete all","cd /opt/ozap-office && pm2 start apps/server/dist/index.js --name ozap-office-server","cd /opt/ozap-office/apps/web && pm2 start node_modules/.bin/next --name ozap-office-web -- start --port 3000","pm2 save"]}' \
+  --parameters '{"commands":["export PATH=/root/.local/share/pnpm:/root/.local/share/pnpm/global/5/node_modules/.bin:/root/.local/share/pnpm/nodejs/20.20.1/bin:$PATH && export HOME=/root","cd /opt/ozap-office && git pull","cd /opt/ozap-office && pnpm -F @ozap-office/shared build && pnpm -F @ozap-office/server build && NEXT_PUBLIC_API_URL= NEXT_PUBLIC_WS_URL= NEXT_PUBLIC_API_KEY=ozap-office-key-2026 pnpm -F @ozap-office/web build","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:migrate","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:seed","pm2 delete all","cd /opt/ozap-office && pm2 start apps/server/dist/index.js --name ozap-office-server","cd /opt/ozap-office/apps/web && pm2 start node_modules/next/dist/bin/next --name ozap-office-web -- start --port 3000","pm2 save"]}' \
   --timeout-seconds 300 \
   --query 'Command.CommandId' --output text --region us-east-1
 ```
