@@ -1,5 +1,0 @@
-[   14943ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/api/agents:0
-[   15053ms] Error: API error: 404 Not Found
-    at request (webpack-internal:///(app-pages-browser)/./lib/api-client.ts:21:15)
-[  243309ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws?key=' failed: WebSocket opening handshake timed out @ webpack-internal:///(app-pages-browser)/./lib/ws-client.ts:23
-[  243311ms] [ERROR] WebSocket error: Event @ webpack-internal:///(app-pages-browser)/../../node_modules/.pnpm/next@15.5.12_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56

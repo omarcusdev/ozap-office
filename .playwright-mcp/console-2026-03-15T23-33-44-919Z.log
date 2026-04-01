@@ -1,6 +1,0 @@
-[   42230ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://13.219.31.27/api/agents/5e08ec3f-44c4-469f-a1f9-7665df1311d1/read:0
-[   42231ms] [ERROR] Error: API error: 400 Bad Request
-    at o (http://13.219.31.27/_next/static/chunks/app/page-7d535cdb80efd5e6.js:1:472) @ :0
-[   43478ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://13.219.31.27/api/agents/5e08ec3f-44c4-469f-a1f9-7665df1311d1/read:0
-[   43478ms] [ERROR] Error: API error: 400 Bad Request
-    at o (http://13.219.31.27/_next/static/chunks/app/page-7d535cdb80efd5e6.js:1:472) @ :0
