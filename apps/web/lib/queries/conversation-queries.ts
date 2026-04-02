@@ -18,9 +18,7 @@ export const useConversationQuery = (agentId: string | null, sessionId: string |
   })
 
   useEffect(() => {
-    if (query.data) {
-      setMessages(query.data)
-    }
+    setMessages(query.data ?? [])
   }, [query.data, setMessages])
 
   return query
