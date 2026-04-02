@@ -48,7 +48,7 @@ export const api = {
   clearConversation: (agentId: string) =>
     request<{ status: string }>(`/api/agents/${agentId}/conversation`, { method: "DELETE" }),
   markAgentRead: (id: string) =>
-    request<{ status: string }>(`/api/agents/${id}/read`, { method: "POST" }),
+    request<{ status: string }>(`/api/agents/${id}/read`, { method: "POST", body: JSON.stringify({}) }),
   getLatestRun: (agentId: string) =>
     request<TaskRun>(`/api/agents/${agentId}/latest-run`),
   getTaskRunEvents: (agentId: string, taskRunId: string) =>
@@ -56,11 +56,11 @@ export const api = {
   getSessions: (agentId: string) =>
     request<ConversationSession[]>(`/api/agents/${agentId}/sessions`),
   createSession: (agentId: string) =>
-    request<ConversationSession>(`/api/agents/${agentId}/sessions`, { method: "POST" }),
+    request<ConversationSession>(`/api/agents/${agentId}/sessions`, { method: "POST", body: JSON.stringify({}) }),
   deleteSession: (agentId: string, sessionId: string) =>
     request<{ status: string }>(`/api/agents/${agentId}/sessions/${sessionId}`, { method: "DELETE" }),
   getSessionMessages: (agentId: string, sessionId: string) =>
     request<ConversationMessage[]>(`/api/agents/${agentId}/sessions/${sessionId}/messages`),
   completeMeeting: (meetingId: string) =>
-    request<{ status: string }>(`/api/meetings/${meetingId}/complete`, { method: "POST" }),
+    request<{ status: string }>(`/api/meetings/${meetingId}/complete`, { method: "POST", body: JSON.stringify({}) }),
 }
