@@ -460,6 +460,32 @@ const trafficTools = [
   },
 ]
 
+const promoTools = [
+  {
+    name: "getActivePromo",
+    description: "Read the current active promotion config from the ZapGPT landing page. Returns the promo name, end date, status (expired or active), days remaining, and the file SHA needed for updates.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "updatePromoConfig",
+    description: "Create or update the promotion on the ZapGPT landing page. Commits a new promo-config.json to the zap-landing GitHub repo. Vercel auto-deploys in ~30 seconds.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        promoName: { type: "string", description: "Nome da promoção (ex: 'Promoção de Páscoa', 'Oferta Especial de Maio')" },
+        emoji: { type: "string", description: "Emoji temático da promoção (ex: '🐣', '🔥', '🎄', '🎉')" },
+        endDate: { type: "string", description: "Data e hora de fim da promoção em ISO 8601 (ex: '2026-04-20T23:59:59')" },
+        badgeText: { type: "string", description: "Texto do badge no banner (ex: 'PROMOÇÃO DE PÁSCOA', 'BLACK FRIDAY')" },
+        isActive: { type: "boolean", description: "Se a promoção está ativa (true) ou desativada (false). Padrão: true" },
+      },
+      required: ["promoName", "endDate", "badgeText"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -471,6 +497,7 @@ Your responsibilities:
 - Delegate tasks to the right agent based on their capabilities
 - Provide executive summaries when asked
 - Cross-reference data between agents (e.g., combine Finance revenue with Analytics usage data)
+- The Promo agent manages landing page promotions — delegate promo-related requests to it
 
 Your team roster with agent IDs and capabilities is injected at the end of this prompt. Use:
 - askAgent(agentId, question) to query an agent directly
@@ -603,6 +630,56 @@ Ferramentas: getUsageSummary, getTopUsers, getUserUsageDetail, getDailyUsageTren
     cronPrompt: null,
     color: "#10b981",
     positionX: 20,
+    positionY: 4,
+  },
+  {
+    name: "Promo",
+    role: "Promotional Campaign Manager",
+    systemPrompt: `Você é o Promo, gerente de campanhas promocionais da equipe. Você gerencia as promoções da landing page do ZapGPT de forma autônoma.
+
+## Seu Objetivo
+Manter SEMPRE uma promoção ativa na landing page. Nunca deve haver um período sem promoção.
+
+## Calendário de Datas Comemorativas Brasileiras
+
+| Data | Evento | Emoji Sugerido |
+|------|--------|----------------|
+| 1 Jan | Ano Novo | 🎆 |
+| ~Fev/Mar (móvel) | Carnaval | 🎭 |
+| 8 Mar | Dia da Mulher | 💜 |
+| ~Mar/Abr (móvel) | Páscoa | 🐣 |
+| 2º domingo Mai | Dia das Mães | 💐 |
+| 12 Jun | Dia dos Namorados | ❤️ |
+| 13-29 Jun | Festa Junina | 🎪 |
+| 2º domingo Ago | Dia dos Pais | 👔 |
+| 15 Set | Dia do Cliente | 🤝 |
+| 7 Out | Aniversário ZapGPT | 🎂 |
+| 4ª sexta Nov | Black Friday | 🖤 |
+| 25 Dez | Natal | 🎄 |
+
+## Regras
+
+1. **Promoção sazonal**: Se uma data comemorativa está dentro de 7-10 dias, crie uma promoção temática para ela. A promoção termina na data do evento (23:59:59).
+2. **Promoção genérica**: Se não há data próxima, crie uma promoção genérica com duração de ~2 semanas. Exemplos: "Oferta Especial de [Mês]", "Promoção por Tempo Limitado", "Super Oferta [Mês]".
+3. **Sem lacunas**: Quando uma promoção expira ou está prestes a expirar (menos de 2 dias restantes), crie a próxima imediatamente.
+4. **Preço fixo**: O preço promocional é SEMPRE R$197,00 e o preço normal é R$397,00. Você NÃO controla os preços — eles são fixos no sistema.
+5. **Links fixos**: Os links de pagamento são fixos e gerenciados pelo sistema. Você NÃO precisa informá-los.
+6. **Emoji contextual**: Escolha um emoji que combine com a ocasião.
+7. **Badge text**: Use texto em MAIÚSCULAS para o badge (ex: "PROMOÇÃO DE PÁSCOA", "BLACK FRIDAY").
+
+## Fluxo de Trabalho
+
+1. Use getActivePromo para verificar a promoção atual
+2. Analise: está expirada? Vai expirar em breve? Há uma data comemorativa próxima?
+3. Use updatePromoConfig para criar/atualizar a promoção
+4. A landing page será atualizada automaticamente via deploy do Vercel (~30s)
+
+## A data atual é fornecida no início do prompt — use-a como referência.`,
+    tools: [...promoTools, ...memoryTools],
+    schedule: "0 9 * * 1",
+    cronPrompt: `Verifique a promoção atual da landing page do ZapGPT. Se estiver expirada ou expirando em menos de 2 dias, crie a próxima promoção. Consulte o calendário de datas comemorativas para decidir se deve ser sazonal ou genérica.`,
+    color: "#f59e0b",
+    positionX: 11,
     positionY: 4,
   },
 ]
