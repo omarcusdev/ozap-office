@@ -5,6 +5,7 @@ import { executeMemoryTool } from "../tools/memory.js"
 import { executeAdsTool } from "../tools/ads.js"
 import { executeAnalyticsTool } from "../tools/analytics.js"
 import { executeTrafficTool } from "../tools/traffic.js"
+import { executePromoTool } from "../tools/promo.js"
 
 type ToolResult = {
   content: string
@@ -35,6 +36,7 @@ const TRAFFIC_TOOLS = [
   "getUtmBreakdown",
   "getPageBreakdown",
 ]
+const PROMO_TOOLS = ["getActivePromo", "updatePromoConfig"]
 const ANALYTICS_TOOLS = [
   "getUsageSummary",
   "getTopUsers",
@@ -76,6 +78,10 @@ export const executeTool = async (
 
     if (ANALYTICS_TOOLS.includes(toolName)) {
       return executeAnalyticsTool(toolName, toolInput)
+    }
+
+    if (PROMO_TOOLS.includes(toolName)) {
+      return executePromoTool(toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }
