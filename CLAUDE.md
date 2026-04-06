@@ -31,7 +31,7 @@ pnpm -F @ozap-office/web typecheck
 
 ## Database
 
-PostgreSQL with Drizzle ORM. Schema in `apps/server/src/db/schema.ts`. Tables: `agents`, `task_runs`, `events`, `meetings`, `meeting_messages`, `approvals`. Migrations live in `apps/server/drizzle/`.
+PostgreSQL with Drizzle ORM. Schema in `apps/server/src/db/schema.ts`. Tables: `agents`, `task_runs`, `events`, `meetings`, `meeting_messages`, `approvals`, `conversation_sessions`, `conversation_messages`, `page_views`, `agent_memories`. Migrations live in `apps/server/drizzle/`.
 
 ## Architecture
 
@@ -47,6 +47,16 @@ PostgreSQL with Drizzle ORM. Schema in `apps/server/src/db/schema.ts`. Tables: `
 Tools are defined per-agent as JSON schemas (stored in `agents.tools` JSONB column). `runtime/tool-executor.ts` routes tool names to handler modules:
 - `tools/leader.ts` — askAgent, getAgentHistory, delegateTask (Leader can orchestrate other agents)
 - `tools/finance.ts` — getOrders, getProducts, getRevenueSummary (queries Cakto payment API)
+- `tools/memory.ts` — updateCoreMemory, deleteCoreMemory, saveToArchive, searchArchive (agent persistent memory)
+- `tools/ads.ts` — Meta Ads campaign management (create, pause, activate, duplicate, compare, budget, targeting)
+- `tools/analytics.ts` — ZapGPT usage analytics (usage summary, top users, daily trends, model breakdown)
+- `tools/traffic.ts` — LP traffic analytics (summary, by source, daily, UTM breakdown, page breakdown)
+- `tools/promo.ts` — getActivePromo, updatePromoConfig (GitHub-backed promo configuration)
+
+Supporting integrations in `integrations/`:
+- `cakto-client.ts` — Cakto payment gateway API client
+- `meta-ads-mcp-client.ts` — Meta Ads API client
+- `zapgpt-db.ts` — Read-only connection to ZapGPT database for analytics
 
 To add a new tool domain: create `tools/<domain>.ts` with `execute<Domain>Tool()`, register tool names in `tool-executor.ts`.
 
@@ -54,26 +64,35 @@ To add a new tool domain: create `tools/<domain>.ts` with `execute<Domain>Tool()
 
 `events/event-bus.ts` wraps Node EventEmitter with typed events (agentEvent, agentStatus, meetingMessage). `events/websocket.ts` bridges the event bus to WebSocket clients with per-agent subscription filtering.
 
+### Frontend Structure
+
+The web app uses Next.js 15 App Router. Files live under `apps/web/app/` (routes) and `apps/web/lib/` (library code). No `src/` directory. UI components use shadcn/ui (`lib/components/ui/`).
+
 ### Frontend Canvas Rendering
 
-All rendering is pure Canvas 2D drawing (no sprites/images). The rendering pipeline:
-- `canvas/tile-map.ts` — defines the office grid layout (rooms, furniture, walls)
-- `canvas/sprite-manager.ts` — draws tiles, agents, and UI elements as pixel rectangles
-- `canvas/isometric.ts` — grid-to-screen coordinate conversion
-- `canvas/office-renderer.ts` — orchestrates rendering loop + click hit-testing
-- `components/office-canvas.tsx` — React wrapper with animation loop and interaction handling
+Isometric office rendered on HTML Canvas with sprite-based drawing. The rendering pipeline:
+- `lib/canvas/tile-map.ts` — defines the office grid layout (rooms, furniture, walls)
+- `lib/canvas/sprite-manager.ts` — draws tiles, agents, and UI elements
+- `lib/canvas/coordinates.ts` — grid-to-screen isometric coordinate conversion
+- `lib/canvas/office-renderer.ts` — orchestrates rendering loop + click hit-testing
+- `lib/canvas/sprite-loader.ts` + `sprite-cache.ts` — sprite asset loading and caching
+- `lib/canvas/effects.ts` + `colorize.ts` — visual effects and color utilities
+- `lib/components/office-canvas.tsx` — React wrapper with animation loop and interaction handling
 
 ### State Management
 
-`app/providers.tsx` contains the `OfficeProvider` context that wires:
-- `use-agents.ts` — fetches agent list, tracks status, handles meeting state, smooth agent position animation
-- `use-websocket.ts` — persistent WebSocket connection with reconnect
-- `use-events.ts` — per-agent event stream for current execution
-- `use-conversation.ts` — persistent multi-turn conversation history per agent
+Zustand stores (`lib/stores/`) + TanStack Query (`lib/queries/`), wired in `app/providers.tsx`:
+- `stores/agent-store.ts` — agent list, status tracking, selection state
+- `stores/ws-store.ts` — persistent WebSocket connection with reconnect
+- `stores/event-store.ts` — per-agent event stream for current execution
+- `stores/conversation-store.ts` — multi-turn conversation state per agent
+- `stores/meeting-store.ts` — meeting state and messages
+- `queries/agent-queries.ts`, `session-queries.ts`, `conversation-queries.ts`, `meeting-queries.ts` — TanStack Query hooks for data fetching
+- `hooks/use-agents-animation.ts` — smooth agent position animation
 
 ## Environment Variables
 
-See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
+See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`, `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`, `META_ADS_APP_ID`, `META_ADS_APP_SECRET`, `ADS_DAILY_BUDGET_LIMIT`, `ZAP_GPT_DATABASE_URL`, `GITHUB_TOKEN`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
 
 ## Infrastructure & Deployment
 
@@ -89,7 +108,7 @@ See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `
 AWS_PROFILE=ozapgpt aws ssm send-command \
   --instance-ids i-025ac97362e218181 \
   --document-name "AWS-RunShellScript" \
-  --parameters '{"commands":["export PATH=/root/.local/share/pnpm:/root/.local/share/pnpm/global/5/node_modules/.bin:/root/.local/share/pnpm/nodejs/20.20.1/bin:$PATH && export HOME=/root","cd /opt/ozap-office && git pull","cd /opt/ozap-office && pnpm -F @ozap-office/shared build && pnpm -F @ozap-office/server build && NEXT_PUBLIC_API_URL= NEXT_PUBLIC_WS_URL= NEXT_PUBLIC_API_KEY=ozap-office-key-2026 pnpm -F @ozap-office/web build","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:migrate","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:seed","pm2 delete all","cd /opt/ozap-office && pm2 start apps/server/dist/index.js --name ozap-office-server","cd /opt/ozap-office/apps/web && pm2 start node_modules/next/dist/bin/next --name ozap-office-web -- start --port 3000","pm2 save"]}' \
+  --parameters '{"commands":["export PATH=/root/.local/share/pnpm:/root/.local/share/pnpm/global/5/node_modules/.bin:/root/.local/share/pnpm/nodejs/20.20.1/bin:$PATH && export HOME=/root","cd /opt/ozap-office && git pull","cd /opt/ozap-office && pnpm install --frozen-lockfile","cd /opt/ozap-office && pnpm -F @ozap-office/shared build && pnpm -F @ozap-office/server build && NEXT_PUBLIC_API_URL= NEXT_PUBLIC_WS_URL= NEXT_PUBLIC_API_KEY=ozap-office-key-2026 pnpm -F @ozap-office/web build","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:migrate","cd /opt/ozap-office && export $(grep -v ^# .env | xargs) && pnpm -F @ozap-office/server db:seed","pm2 delete all","cd /opt/ozap-office && pm2 start apps/server/dist/index.js --name ozap-office-server","cd /opt/ozap-office/apps/web && pm2 start node_modules/next/dist/bin/next --name ozap-office-web -- start --port 3000","pm2 save"]}' \
   --timeout-seconds 300 \
   --query 'Command.CommandId' --output text --region us-east-1
 ```
