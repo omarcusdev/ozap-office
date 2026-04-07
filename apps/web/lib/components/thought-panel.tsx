@@ -129,6 +129,10 @@ export const ThoughtPanel = () => {
   const events = useEventStore((s) => s.events)
   const conversation = useConversationStore((s) => s.messages)
   const activeSessionId = useConversationStore((s) => s.activeSessionId)
+  const setActiveSessionId = useConversationStore((s) => s.setActiveSessionId)
+  const setMessages = useConversationStore((s) => s.setMessages)
+  const setSessions = useConversationStore((s) => s.setSessions)
+  const clearEvents = useEventStore((s) => s.clearEvents)
 
   useAgentsQuery()
   useConversationQuery(selectedAgentId, activeSessionId)
@@ -152,11 +156,15 @@ export const ThoughtPanel = () => {
     if (selectedAgentId) {
       setDisplayedAgentId(selectedAgentId)
       setPendingMessage(null)
+      setActiveSessionId(null)
+      setMessages([])
+      setSessions([])
+      clearEvents()
     } else {
       const timer = setTimeout(() => setDisplayedAgentId(null), 300)
       return () => clearTimeout(timer)
     }
-  }, [selectedAgentId])
+  }, [selectedAgentId, setActiveSessionId, setMessages, setSessions, clearEvents])
 
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
 
