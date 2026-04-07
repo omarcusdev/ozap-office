@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { useAgentStore } from "@/lib/stores/agent-store"
 import { useEventStore } from "@/lib/stores/event-store"
 import { useConversationStore } from "@/lib/stores/conversation-store"
-import { useAgentsQuery } from "@/lib/queries/agent-queries"
+import { useAgentsQuery, useLatestRunQuery, useTaskRunEventsQuery } from "@/lib/queries/agent-queries"
 import { useConversationQuery, useClearConversationMutation, useSendMessageMutation } from "@/lib/queries/conversation-queries"
 import { useSessionsQuery } from "@/lib/queries/session-queries"
 import { MarkdownRenderer } from "./markdown-renderer"
@@ -134,9 +134,23 @@ export const ThoughtPanel = () => {
   const setSessions = useConversationStore((s) => s.setSessions)
   const clearEvents = useEventStore((s) => s.clearEvents)
 
+  const setEvents = useEventStore((s) => s.setEvents)
+  const setActiveTaskRunId = useEventStore((s) => s.setActiveTaskRunId)
+
   useAgentsQuery()
   useConversationQuery(selectedAgentId, activeSessionId)
   useSessionsQuery(selectedAgentId)
+
+  const latestRunQuery = useLatestRunQuery(selectedAgentId)
+  const latestRun = latestRunQuery.data
+  const taskRunEventsQuery = useTaskRunEventsQuery(selectedAgentId, latestRun?.id ?? null)
+
+  useEffect(() => {
+    if (taskRunEventsQuery.data && taskRunEventsQuery.data.length > 0) {
+      setEvents(taskRunEventsQuery.data)
+      setActiveTaskRunId(taskRunEventsQuery.data[0].taskRunId)
+    }
+  }, [taskRunEventsQuery.data, setEvents, setActiveTaskRunId])
 
   const clearConversationMutation = useClearConversationMutation(selectedAgentId)
   const sendMessageMutation = useSendMessageMutation()
