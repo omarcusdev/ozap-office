@@ -384,15 +384,19 @@ export const ThoughtPanel = () => {
             </div>
 
             <div className="p-4 border-t border-edge">
-              <div className="flex items-center gap-2 bg-raised border border-edge-light rounded-sm overflow-hidden transition-colors focus-within:border-gold/30">
-                <input
-                  type="text"
+              <div className="flex items-end gap-2 bg-raised border border-edge-light rounded-sm overflow-hidden transition-colors focus-within:border-gold/30">
+                <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value)
+                    e.target.style.height = "auto"
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder={`Message ${selectedAgent.name}...`}
                   disabled={sending}
-                  className="flex-1 bg-transparent px-3.5 py-2.5 text-sm text-cream placeholder-mute focus:outline-none disabled:opacity-40"
+                  rows={1}
+                  className="flex-1 bg-transparent px-3.5 py-2.5 text-sm text-cream placeholder-mute focus:outline-none disabled:opacity-40 resize-none"
                 />
                 <button
                   onClick={handleSend}
