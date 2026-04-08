@@ -77,8 +77,8 @@ const EventItem = ({ event }: { event: AgentEvent }) => {
   )
 }
 
-const InternalDetails = ({ events }: { events: AgentEvent[] }) => {
-  const [expanded, setExpanded] = useState(false)
+const InternalDetails = ({ events, defaultExpanded = false }: { events: AgentEvent[]; defaultExpanded?: boolean }) => {
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const duration = formatDuration(events)
 
   return (
@@ -100,6 +100,16 @@ const InternalDetails = ({ events }: { events: AgentEvent[] }) => {
     </div>
   )
 }
+
+const ErrorBanner = ({ content }: { content: string }) => (
+  <div className="mx-4 my-2 px-3.5 py-2.5 bg-coral/10 border border-coral/25 rounded-lg">
+    <div className="flex items-center gap-2 mb-1">
+      <div className="w-1.5 h-1.5 rounded-full bg-coral" />
+      <span className="text-[11px] font-mono font-semibold text-coral uppercase tracking-wide">Error</span>
+    </div>
+    <p className="text-[13px] text-cream/80 leading-relaxed">{content}</p>
+  </div>
+)
 
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 px-4 py-3 ml-4">
@@ -253,12 +263,14 @@ export const ThoughtPanel = () => {
     (e) => e.type === "thinking" || e.type === "tool_call" || e.type === "tool_result"
   )
   const responseEvents = nonDelegationEvents.filter((e) => e.type === "message")
+  const errorEvent = nonDelegationEvents.find((e) => e.type === "error")
   const currentResponse = responseEvents.length > 0
     ? responseEvents.map((e) => e.content).join("\n\n")
     : null
   const userMessageEvent = events.find((e) => e.type === "user_message")
   const currentUserMessage = pendingMessage ?? userMessageEvent?.content ?? null
   const isProcessing = events.length > 0 && !events.some((e) => e.type === "completed" || e.type === "error")
+  const isAgentActive = selectedAgent?.status === "working" || selectedAgent?.status === "thinking"
   const hasContent = conversation.length > 0 || events.length > 0 || pendingMessage
 
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
@@ -330,10 +342,11 @@ export const ThoughtPanel = () => {
                   )}
 
                   {currentUserMessage && <UserBubble message={currentUserMessage} />}
-                  {internalEvents.length > 0 && <InternalDetails events={internalEvents} />}
+                  {internalEvents.length > 0 && <InternalDetails events={internalEvents} defaultExpanded={isAgentActive || !!errorEvent} />}
                   {delegations.map((pair) => (
                     <DelegationThread key={pair.start.id} pair={pair} />
                   ))}
+                  {errorEvent && <ErrorBanner content={errorEvent.content} />}
                   {currentResponse && <AgentBubble content={currentResponse} />}
                   {isProcessing && <TypingIndicator />}
                 </div>
