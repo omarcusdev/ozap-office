@@ -18,22 +18,12 @@ const MCP_CALL_TIMEOUT_MS = 60_000
 const pending = new Map<number, PendingRequest>()
 let mcpProcess: ChildProcess | null = null
 let requestIdCounter = 0
-let spawning = false
+let initialized: Promise<ChildProcess> | null = null
 
-const ensureProcess = (): ChildProcess => {
-  if (mcpProcess && mcpProcess.exitCode === null) {
-    return mcpProcess
-  }
-
-  if (spawning) {
-    throw new Error("MCP process is already starting up")
-  }
-
+const spawnAndInitialize = (): Promise<ChildProcess> => {
   if (!config.metaAdsAccessToken) {
-    throw new Error("META_ADS_ACCESS_TOKEN must be set")
+    return Promise.reject(new Error("META_ADS_ACCESS_TOKEN must be set"))
   }
-
-  spawning = true
 
   const child = spawn("meta-ads-mcp", [], {
     stdio: ["pipe", "pipe", "pipe"],
@@ -74,6 +64,7 @@ const ensureProcess = (): ChildProcess => {
   child.on("exit", (code) => {
     console.error(`[meta-ads-mcp] process exited with code ${code}`)
     mcpProcess = null
+    initialized = null
     for (const [id, entry] of pending) {
       clearTimeout(entry.timer)
       entry.reject(new Error(`MCP process exited with code ${code}`))
@@ -82,13 +73,55 @@ const ensureProcess = (): ChildProcess => {
   })
 
   mcpProcess = child
-  spawning = false
 
-  return child
+  return new Promise<ChildProcess>((resolve, reject) => {
+    const initId = ++requestIdCounter
+    const timer = setTimeout(() => {
+      pending.delete(initId)
+      reject(new Error("MCP initialization timed out"))
+    }, 10_000)
+
+    pending.set(initId, {
+      resolve: () => {
+        clearTimeout(timer)
+        child.stdin!.write(
+          JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n"
+        )
+        resolve(child)
+      },
+      reject: (err) => {
+        clearTimeout(timer)
+        reject(err)
+      },
+      timer,
+    })
+
+    child.stdin!.write(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: initId,
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "ozap-office", version: "1.0.0" },
+        },
+      }) + "\n"
+    )
+  })
 }
 
-export const callMcpTool = (toolName: string, args: Record<string, unknown>): Promise<McpToolResult> => {
-  const child = ensureProcess()
+const ensureProcess = (): Promise<ChildProcess> => {
+  if (mcpProcess && mcpProcess.exitCode === null && initialized) {
+    return initialized
+  }
+
+  initialized = spawnAndInitialize()
+  return initialized
+}
+
+export const callMcpTool = async (toolName: string, args: Record<string, unknown>): Promise<McpToolResult> => {
+  const child = await ensureProcess()
   const id = ++requestIdCounter
 
   const request = {
