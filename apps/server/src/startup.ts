@@ -1,6 +1,6 @@
 import { db } from "./db/client.js"
-import { taskRuns, events } from "./db/schema.js"
-import { eq } from "drizzle-orm"
+import { agents, taskRuns, events } from "./db/schema.js"
+import { eq, inArray } from "drizzle-orm"
 
 export const recoverOrphanedTaskRuns = async () => {
   const orphanedRunning = await db
@@ -8,8 +8,11 @@ export const recoverOrphanedTaskRuns = async () => {
     .from(taskRuns)
     .where(eq(taskRuns.status, "running"))
 
+  const affectedAgentIds = new Set<string>()
+
   for (const run of orphanedRunning) {
     console.log(`Marking orphaned task_run ${run.id} as failed`)
+    affectedAgentIds.add(run.agentId)
     await db
       .update(taskRuns)
       .set({ status: "failed", completedAt: new Date() })
@@ -22,6 +25,10 @@ export const recoverOrphanedTaskRuns = async () => {
       content: "Task run interrupted by server restart",
       timestamp: new Date(),
     })
+  }
+
+  for (const agentId of affectedAgentIds) {
+    await db.update(agents).set({ status: "idle", updatedAt: new Date() }).where(eq(agents.id, agentId))
   }
 
   if (orphanedRunning.length > 0) {

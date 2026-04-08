@@ -323,9 +323,10 @@ export const executeAgentForMeeting = async (
 
   const [taskRun] = await db
     .insert(taskRuns)
-    .values({ agentId, trigger: "meeting", status: "running", startedAt: new Date() })
+    .values({ agentId, trigger: "meeting", status: "running", input: { context: question }, startedAt: new Date() })
     .returning()
 
+  await emitEvent(agentId, taskRun.id, "user_message", question)
   await updateAgentStatus(agentId, "thinking")
   await runAgenticLoop(agentWithMemory, taskRun.id, messages, agentTools, bedrockTools)
   await updateAgentStatus(agentId, "idle")
