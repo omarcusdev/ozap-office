@@ -46,7 +46,7 @@ const listCampaigns = async (input: Record<string, unknown>): Promise<ToolResult
     args.effective_status = [status]
   }
 
-  const result = await callMcpTool("list_campaigns", args)
+  const result = await callMcpTool("get_campaigns", args)
   return extractMcpText(result)
 }
 
@@ -130,7 +130,7 @@ const createAdSet = async (input: Record<string, unknown>): Promise<ToolResult> 
     return { content: "campaignId, name, and targeting are required", isError: true }
   }
 
-  const result = await callMcpTool("create_ad_set", {
+  const result = await callMcpTool("create_adset", {
     account_id: config.metaAdsAccountId,
     campaign_id: campaignId,
     name,
@@ -242,20 +242,8 @@ const updateBudget = async (input: Record<string, unknown>): Promise<ToolResult>
   return extractMcpText(result)
 }
 
-const duplicateCampaign = async (input: Record<string, unknown>): Promise<ToolResult> => {
-  const campaignId = input.campaignId as string
-  const newName = input.newName as string
-
-  if (!campaignId || !newName) {
-    return { content: "campaignId and newName are required", isError: true }
-  }
-
-  const result = await callMcpTool("duplicate_campaign", {
-    campaign_id: campaignId,
-    name: newName,
-    status: "PAUSED",
-  })
-  return extractMcpText(result)
+const duplicateCampaign = async (_input: Record<string, unknown>): Promise<ToolResult> => {
+  return { content: "duplicateCampaign is not supported by the current Meta Ads MCP server. Create a new campaign instead.", isError: true }
 }
 
 const comparePerformance = async (input: Record<string, unknown>): Promise<ToolResult> => {
