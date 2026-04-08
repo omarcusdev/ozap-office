@@ -19,7 +19,7 @@ export const useConversationQuery = (agentId: string | null, sessionId: string |
 
   useEffect(() => {
     setMessages(query.data ?? [])
-  }, [query.data, setMessages])
+  }, [agentId, sessionId, query.data, setMessages])
 
   return query
 }

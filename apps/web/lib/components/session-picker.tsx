@@ -39,6 +39,7 @@ export const SessionPicker = ({ agentId }: SessionPickerProps) => {
   const activeSession = sessions.find((s) => s.id === activeSessionId)
 
   const handleNewSession = () => {
+    if (createSession.isPending) return
     createSession.mutate(undefined, {
       onSuccess: (session) => {
         setActiveSessionId(session.id)

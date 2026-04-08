@@ -25,7 +25,7 @@ export const useConversationStore = create<ConversationStore>((set) => ({
   activeSessionId: null,
   messages: [],
   setSessions: (sessions) => set({ sessions }),
-  setActiveSessionId: (id) => set({ activeSessionId: id }),
+  setActiveSessionId: (id) => set({ activeSessionId: id, messages: [] }),
   setMessages: (messages) => set({ messages }),
   addSession: (session) =>
     set((state) => ({ sessions: [session, ...state.sessions] })),
