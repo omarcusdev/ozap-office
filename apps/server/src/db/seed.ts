@@ -679,7 +679,7 @@ Manter SEMPRE uma promoção ativa na landing page. Nunca deve haver um período
     schedule: "0 9 * * 1",
     cronPrompt: `Verifique a promoção atual da landing page do ZapGPT. Se estiver expirada ou expirando em menos de 2 dias, crie a próxima promoção. Consulte o calendário de datas comemorativas para decidir se deve ser sazonal ou genérica.`,
     color: "#f59e0b",
-    positionX: 11,
+    positionX: 23,
     positionY: 4,
   },
 ]
