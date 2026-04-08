@@ -215,6 +215,13 @@ export const ThoughtPanel = () => {
     }
   }, [selectedAgentId, setActiveSessionId, setMessages, setSessions, clearEvents, setEvents, setActiveTaskRunId, setTaskRunInfo])
 
+  useEffect(() => {
+    if (activeSessionId !== null) {
+      clearEvents()
+      setPendingMessage(null)
+    }
+  }, [activeSessionId, clearEvents])
+
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
 
   const checkNearBottom = useCallback(() => {
