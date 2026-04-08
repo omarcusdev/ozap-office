@@ -111,6 +111,25 @@ const ErrorBanner = ({ content }: { content: string }) => (
   </div>
 )
 
+const TRIGGER_LABELS: Record<string, string> = {
+  cron: "Scheduled Task",
+  manual: "Manual",
+  meeting: "Meeting",
+  event: "Event",
+}
+
+const TaskRunBanner = ({ trigger, input }: { trigger: string; input: string | null }) => (
+  <div className="mx-4 my-2 px-3.5 py-2.5 bg-raised border border-edge-light rounded-lg">
+    <div className="flex items-center gap-2 mb-1.5">
+      <div className="w-1.5 h-1.5 rounded-full bg-gold" />
+      <span className="text-[11px] font-mono font-semibold text-gold uppercase tracking-wide">
+        {TRIGGER_LABELS[trigger] ?? trigger}
+      </span>
+    </div>
+    {input && <p className="text-[12px] text-cream/70 leading-relaxed">{input}</p>}
+  </div>
+)
+
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 px-4 py-3 ml-4">
     {[0, 1, 2].map((i) => (
@@ -146,6 +165,8 @@ export const ThoughtPanel = () => {
 
   const setEvents = useEventStore((s) => s.setEvents)
   const setActiveTaskRunId = useEventStore((s) => s.setActiveTaskRunId)
+  const setTaskRunInfo = useEventStore((s) => s.setTaskRunInfo)
+  const taskRunInfo = useEventStore((s) => s.taskRunInfo)
 
   useAgentsQuery()
   useConversationQuery(selectedAgentId, activeSessionId)
@@ -177,6 +198,11 @@ export const ThoughtPanel = () => {
       api.getLatestRun(selectedAgentId)
         .then((run) => api.getTaskRunEvents(selectedAgentId, run.id).then((evts) => ({ run, evts })))
         .then(({ run, evts }) => {
+          const runInput = run.input as { context?: string } | null
+          setTaskRunInfo({
+            trigger: run.trigger as string,
+            input: runInput?.context ?? null,
+          })
           if (evts.length > 0) {
             setEvents(evts)
             setActiveTaskRunId(run.id)
@@ -187,7 +213,7 @@ export const ThoughtPanel = () => {
       const timer = setTimeout(() => setDisplayedAgentId(null), 300)
       return () => clearTimeout(timer)
     }
-  }, [selectedAgentId, setActiveSessionId, setMessages, setSessions, clearEvents, setEvents, setActiveTaskRunId])
+  }, [selectedAgentId, setActiveSessionId, setMessages, setSessions, clearEvents, setEvents, setActiveTaskRunId, setTaskRunInfo])
 
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
 
@@ -342,6 +368,9 @@ export const ThoughtPanel = () => {
                   )}
 
                   {currentUserMessage && <UserBubble message={currentUserMessage} />}
+                  {!currentUserMessage && taskRunInfo && events.length > 0 && (
+                    <TaskRunBanner trigger={taskRunInfo.trigger} input={taskRunInfo.input} />
+                  )}
                   {internalEvents.length > 0 && <InternalDetails events={internalEvents} defaultExpanded={isAgentActive || !!errorEvent} />}
                   {delegations.map((pair) => (
                     <DelegationThread key={pair.start.id} pair={pair} />
