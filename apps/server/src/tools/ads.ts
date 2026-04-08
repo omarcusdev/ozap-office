@@ -28,9 +28,7 @@ const getAdAccountOverview = async (input: Record<string, unknown>): Promise<Too
   const args: Record<string, unknown> = {
     account_id: config.metaAdsAccountId,
     level: "account",
-  }
-  if (dateRange) {
-    args.date_preset = dateRange
+    date_preset: dateRange ?? "last_30d",
   }
 
   const result = await callMcpTool("get_insights", args)
@@ -63,9 +61,7 @@ const getCampaignInsights = async (input: Record<string, unknown>): Promise<Tool
     account_id: config.metaAdsAccountId,
     level: "campaign",
     filtering: [{ field: "campaign.id", operator: "EQUAL", value: [campaignId] }],
-  }
-  if (dateRange) {
-    args.date_preset = dateRange
+    date_preset: dateRange ?? "last_30d",
   }
   if (breakdowns) {
     args.breakdowns = breakdowns
@@ -260,9 +256,7 @@ const comparePerformance = async (input: Record<string, unknown>): Promise<ToolR
         account_id: config.metaAdsAccountId,
         level: "campaign",
         filtering: [{ field: "campaign.id", operator: "EQUAL", value: [campaignId] }],
-      }
-      if (dateRange) {
-        args.date_preset = dateRange
+        date_preset: dateRange ?? "last_30d",
       }
 
       const result = await callMcpTool("get_insights", args)
