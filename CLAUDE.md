@@ -52,6 +52,7 @@ Tools are defined per-agent as JSON schemas (stored in `agents.tools` JSONB colu
 - `tools/analytics.ts` — ZapGPT usage analytics (usage summary, top users, daily trends, model breakdown)
 - `tools/traffic.ts` — LP traffic analytics (summary, by source, daily, UTM breakdown, page breakdown)
 - `tools/promo.ts` — getActivePromo, updatePromoConfig (GitHub-backed promo configuration)
+- `tools/twitter.ts` — postTweet, getRecentTweets, getMentions (X/Twitter API with free-tier fallback)
 
 Supporting integrations in `integrations/`:
 - `cakto-client.ts` — Cakto payment gateway API client
@@ -92,7 +93,7 @@ Zustand stores (`lib/stores/`) + TanStack Query (`lib/queries/`), wired in `app/
 
 ## Environment Variables
 
-See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`, `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`, `META_ADS_APP_ID`, `META_ADS_APP_SECRET`, `ADS_DAILY_BUDGET_LIMIT`, `ZAP_GPT_DATABASE_URL`, `GITHUB_TOKEN`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
+See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`, `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`, `META_ADS_APP_ID`, `META_ADS_APP_SECRET`, `ADS_DAILY_BUDGET_LIMIT`, `ZAP_GPT_DATABASE_URL`, `GITHUB_TOKEN`, `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
 
 ## Infrastructure & Deployment
 
