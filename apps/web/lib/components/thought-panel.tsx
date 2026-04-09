@@ -304,6 +304,9 @@ export const ThoughtPanel = () => {
   const currentUserMessage = pendingMessage ?? userMessageEvent?.content ?? null
   const isProcessing = events.length > 0 && !events.some((e) => e.type === "completed" || e.type === "error")
   const isAgentActive = selectedAgent?.status === "working" || selectedAgent?.status === "thinking"
+  const runCompleted = events.some((e) => e.type === "completed")
+  const runAlreadyInConversation = !!userMessageEvent && runCompleted &&
+    conversation.some((m) => m.role === "user" && m.content === userMessageEvent.content)
   const hasContent = conversation.length > 0 || events.length > 0 || pendingMessage
 
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
@@ -374,8 +377,8 @@ export const ThoughtPanel = () => {
                     )
                   )}
 
-                  {currentUserMessage && <UserBubble message={currentUserMessage} />}
-                  {!currentUserMessage && taskRunInfo && events.length > 0 && (
+                  {!runAlreadyInConversation && currentUserMessage && <UserBubble message={currentUserMessage} />}
+                  {!runAlreadyInConversation && !currentUserMessage && taskRunInfo && events.length > 0 && (
                     <TaskRunBanner trigger={taskRunInfo.trigger} input={taskRunInfo.input} />
                   )}
                   {internalEvents.length > 0 && <InternalDetails events={internalEvents} defaultExpanded={isAgentActive || !!errorEvent} />}
@@ -383,7 +386,7 @@ export const ThoughtPanel = () => {
                     <DelegationThread key={pair.start.id} pair={pair} />
                   ))}
                   {errorEvent && <ErrorBanner content={errorEvent.content} />}
-                  {currentResponse && <AgentBubble content={currentResponse} />}
+                  {!runAlreadyInConversation && currentResponse && <AgentBubble content={currentResponse} />}
                   {isProcessing && <TypingIndicator />}
                 </div>
               )}
