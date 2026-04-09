@@ -115,6 +115,13 @@ export const MEETING_ROUTES: Record<string, { path: Waypoint[]; seat: Waypoint }
     ],
     seat: { x: 16, y: 16 },
   },
+  X: {
+    path: [
+      { x: 26, y: 5 }, { x: 22, y: 8 }, { x: 17, y: 10 },
+      { x: 15, y: 11 }, { x: 16, y: 15 },
+    ],
+    seat: { x: 16, y: 15 },
+  },
 }
 
 export const FURNITURE_PLACEMENTS: FurniturePlacement[] = [
