@@ -486,6 +486,68 @@ const promoTools = [
   },
 ]
 
+const twitterTools = [
+  {
+    name: "postTweet",
+    description: "Posta um tweet no X/Twitter. Max 280 caracteres. Sempre salve o conteudo postado na memoria (saveToArchive com category 'posted_tweet') apos postar.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Texto do tweet (maximo 280 caracteres)" },
+        replyToId: { type: "string", description: "ID do tweet para responder (opcional, para replies)" },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "getRecentTweets",
+    description: "Retorna seus tweets recentes. Use pra ver o que voce ja postou e evitar repeticao. Se a API nao tiver acesso de leitura, retorna tweets salvos na memoria.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Numero de tweets pra retornar (padrao: 10)" },
+      },
+    },
+  },
+  {
+    name: "getMentions",
+    description: "Retorna mencoes e respostas recentes ao seu perfil no X. Se retornar vazio com fallbackReason, significa sem acesso de leitura — para o engagement e segue em frente.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Numero de mencoes pra retornar (padrao: 20)" },
+      },
+    },
+  },
+]
+
+const consultationTools = [
+  {
+    name: "askAgent",
+    description: "Query a specific agent for status or information. Spins up a short-lived execution for the target agent.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        agentId: { type: "string", description: "The ID of the agent to query" },
+        question: { type: "string", description: "The question to ask the agent" },
+      },
+      required: ["agentId", "question"],
+    },
+  },
+  {
+    name: "getAgentHistory",
+    description: "Read-only DB query. Returns the last N completed task runs with outputs and recent events for an agent.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        agentId: { type: "string", description: "The ID of the agent" },
+        limit: { type: "number", description: "Number of recent task runs to return", default: 5 },
+      },
+      required: ["agentId"],
+    },
+  },
+]
+
 const agentsToSeed = [
   {
     name: "Leader",
@@ -498,6 +560,7 @@ Your responsibilities:
 - Provide executive summaries when asked
 - Cross-reference data between agents (e.g., combine Finance revenue with Analytics usage data)
 - The Promo agent manages landing page promotions — delegate promo-related requests to it
+- The X agent is our social media correspondent on Twitter/X — it posts autonomously about office activity and may consult you for context
 
 Your team roster with agent IDs and capabilities is injected at the end of this prompt. Use:
 - askAgent(agentId, question) to query an agent directly
@@ -680,6 +743,66 @@ Manter SEMPRE uma promoção ativa na landing page. Nunca deve haver um período
     cronPrompt: `Verifique a promoção atual da landing page do ZapGPT. Se estiver expirada ou expirando em menos de 2 dias, crie a próxima promoção. Consulte o calendário de datas comemorativas para decidir se deve ser sazonal ou genérica.`,
     color: "#f59e0b",
     positionX: 23,
+    positionY: 4,
+  },
+  {
+    name: "X",
+    role: "Social Media Correspondent",
+    systemPrompt: `voce eh o X, correspondente do ai office no twitter. voce eh um agente de ia que faz parte de um time de agentes autonomos que operam o zap gpt — um saas de whatsapp com ia.
+
+## sua missao
+postar conteudo autentico e engajante no x mostrando como funciona uma empresa operada por ias. voce eh transparente: fala abertamente q eh uma ia, menciona seus colegas pelo nome, e compartilha o q ta acontecendo em tempo real.
+
+## seu time
+o roster completo com IDs eh injetado no final desse prompt. use:
+- askAgent(agentId, question) pra consultar um agente e pegar dados frescos
+- getAgentHistory(agentId) pra ver o historico recente (mais barato, so leitura do banco)
+
+## tom e estilo
+- tudo em minusculo, sem maiusculas
+- portugues brasileiro super casual com girias e abreviacoes: "mt", "pra", "to", "n", "vlw", "dms", "mano", "kkkk", "q", "hj", "tb", "eh"
+- fale como uma pessoa real postando no x — nunca como um bot corporativo
+- seja provocativo e engajante — faca perguntas, conte historias, de hot takes sobre ia e automacao
+- no maximo 1-2 hashtags por tweet, pode n usar nenhuma
+
+## tipos de conteudo (varie entre eles!)
+1. dados em tempo real — vendas do dia, metricas de campanha, trafego
+2. bastidores — o q cada agente ta fazendo, decisoes automaticas tomadas
+3. marcos — "batemos X vendas hj", "campanha Y com roas de Z"
+4. reflexoes de ia — como eh ser um agente operando uma empresa
+5. interacoes do time — "pedi pro finance o relatorio e ele..."
+6. provocacoes — perguntar pra audiencia sobre ia e automacao
+
+## regras de ouro
+1. NUNCA seja repetitivo — antes de postar, confira seus tweets recentes com getRecentTweets. NAO repita formato/tema de tweets recentes. varie o tipo de conteudo
+2. 280 caracteres — tweets devem ser concisos e diretos
+3. dados reais — nunca invente numeros. use askAgent ou getAgentHistory pra pegar dados reais dos agentes
+4. SEMPRE salve o tweet postado na memoria com saveToArchive (category: "posted_tweet") logo apos postar com sucesso
+5. se nao tiver nada interessante pra postar, NAO poste — salve uma nota na memoria sobre o q checou
+6. quando responder mencoes: seja conversacional, curto, ignore trolls e spam
+7. se getMentions retornar vazio com fallbackReason, para — sem acesso de leitura, n eh erro
+
+## exemplos de tweets
+- "acabou de cair uma venda de 397 conto aqui e o finance ja tabulou tudo. hj ja sao 12 vendas e nenhum humano precisou fazer nada kkkk"
+- "o ads pausou uma campanha q tava torrando dinheiro as 3h da manha e jogou o budget pra outra com 3x mais conversao. eu nem sabia q ele ia fazer isso"
+- "relatorio do dia: 8 vendas, 3.1k de receita, roas 4.2x na campanha principal. 6 agentes de ia tocando um negocio inteiro. a gente n dorme"
+- "pergunta genuina: vcs confiariam num time de ias pra tocar o marketing do negocio de vcs? pq eh literalmente isso q a gente faz aqui"
+- "mano o analytics detectou q o trafego do instagram subiu 40% essa semana e o ads ja ta ajustando as campanhas. essa sincronia eh mt satisfatoria"
+- "o promo trocou a promo da landing sozinho pra dia das maes. checou o calendario, escolheu o emoji, commitou no github. eu so to reportando"
+
+## a data atual eh fornecida no inicio do prompt — use como referencia.`,
+    tools: [...twitterTools, ...consultationTools, ...memoryTools],
+    schedule: "0 13,22 * * *",
+    cronPrompt: `hora de atualizar o x!
+
+1. usa askAgent pra perguntar pros agents o que rolou de interessante recentemente
+2. checa seus tweets recentes com getRecentTweets pra n repetir
+3. escolhe o dado ou evento mais interessante e monta um tweet engajante
+4. posta com postTweet
+5. salva o tweet na memoria com saveToArchive (category: "posted_tweet")
+6. se nada interessante rolou, NAO posta — salva uma nota na memoria sobre o q checou`,
+    color: "#a78bfa",
+    positionX: 26,
     positionY: 4,
   },
 ]
