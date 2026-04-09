@@ -23,16 +23,34 @@ const guardedResponse = (reason: string): ToolResult => ({
   isError: true,
 })
 
+const datePresetLabel: Record<string, string> = {
+  today: "Hoje",
+  yesterday: "Ontem",
+  last_7d: "Últimos 7 dias",
+  last_14d: "Últimos 14 dias",
+  last_28d: "Últimos 28 dias",
+  last_30d: "Últimos 30 dias",
+  last_90d: "Últimos 90 dias",
+  this_month: "Este mês",
+  last_month: "Mês passado",
+}
+
+const withDateLabel = (result: ToolResult, preset: string): ToolResult => ({
+  ...result,
+  content: `[Período: ${datePresetLabel[preset] ?? preset}]\n${result.content}`,
+})
+
 const getAdAccountOverview = async (input: Record<string, unknown>): Promise<ToolResult> => {
   const dateRange = input.dateRange as string | undefined
+  const preset = dateRange ?? "last_30d"
   const args: Record<string, unknown> = {
     account_id: config.metaAdsAccountId,
     level: "account",
-    date_preset: dateRange ?? "last_30d",
+    date_preset: preset,
   }
 
   const result = await callMcpTool("get_insights", args)
-  return extractMcpText(result)
+  return withDateLabel(extractMcpText(result), preset)
 }
 
 const listCampaigns = async (input: Record<string, unknown>): Promise<ToolResult> => {
@@ -57,18 +75,19 @@ const getCampaignInsights = async (input: Record<string, unknown>): Promise<Tool
     return { content: "campaignId is required", isError: true }
   }
 
+  const preset = dateRange ?? "last_30d"
   const args: Record<string, unknown> = {
     account_id: config.metaAdsAccountId,
     level: "campaign",
     filtering: [{ field: "campaign.id", operator: "EQUAL", value: [campaignId] }],
-    date_preset: dateRange ?? "last_30d",
+    date_preset: preset,
   }
   if (breakdowns) {
     args.breakdowns = breakdowns
   }
 
   const result = await callMcpTool("get_insights", args)
-  return extractMcpText(result)
+  return withDateLabel(extractMcpText(result), preset)
 }
 
 const searchTargetingOptions = async (input: Record<string, unknown>): Promise<ToolResult> => {
@@ -250,13 +269,16 @@ const comparePerformance = async (input: Record<string, unknown>): Promise<ToolR
     return { content: "campaignIds array is required", isError: true }
   }
 
+  const preset = dateRange ?? "last_30d"
+  const label = datePresetLabel[preset] ?? preset
+
   const results = await Promise.all(
     campaignIds.map(async (campaignId) => {
       const args: Record<string, unknown> = {
         account_id: config.metaAdsAccountId,
         level: "campaign",
         filtering: [{ field: "campaign.id", operator: "EQUAL", value: [campaignId] }],
-        date_preset: dateRange ?? "last_30d",
+        date_preset: preset,
       }
 
       const result = await callMcpTool("get_insights", args)
@@ -265,7 +287,7 @@ const comparePerformance = async (input: Record<string, unknown>): Promise<ToolR
         .map((c) => c.text)
         .join("")
 
-      return { campaignId, insights: text, isError: result.isError }
+      return { campaignId, period: label, insights: text, isError: result.isError }
     })
   )
 
