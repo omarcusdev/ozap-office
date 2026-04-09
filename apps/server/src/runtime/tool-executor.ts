@@ -37,7 +37,7 @@ const TRAFFIC_TOOLS = [
   "getUtmBreakdown",
   "getPageBreakdown",
 ]
-const PROMO_TOOLS = ["getActivePromo", "updatePromoConfig"]
+const PROMO_TOOLS = ["getActivePromo", "updatePromoConfig", "startPriceTest", "getPriceTestStatus", "collectAndAdvancePriceTest"]
 const TWITTER_TOOLS = ["postTweet", "getRecentTweets", "getMentions"]
 const ANALYTICS_TOOLS = [
   "getUsageSummary",
@@ -83,7 +83,7 @@ export const executeTool = async (
     }
 
     if (PROMO_TOOLS.includes(toolName)) {
-      return executePromoTool(toolName, toolInput)
+      return executePromoTool(toolName, toolInput, agentId)
     }
 
     if (TWITTER_TOOLS.includes(toolName)) {
