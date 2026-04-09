@@ -19,4 +19,8 @@ export const config = {
   adsDailyBudgetLimit: Number(process.env.ADS_DAILY_BUDGET_LIMIT ?? 100),
   zapGptDatabaseUrl: process.env.ZAP_GPT_DATABASE_URL ?? "",
   githubToken: process.env.GITHUB_TOKEN ?? "",
+  twitterApiKey: process.env.TWITTER_API_KEY ?? "",
+  twitterApiSecret: process.env.TWITTER_API_SECRET ?? "",
+  twitterAccessToken: process.env.TWITTER_ACCESS_TOKEN ?? "",
+  twitterAccessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET ?? "",
 }
