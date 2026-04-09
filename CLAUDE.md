@@ -31,7 +31,7 @@ pnpm -F @ozap-office/web typecheck
 
 ## Database
 
-PostgreSQL with Drizzle ORM. Schema in `apps/server/src/db/schema.ts`. Tables: `agents`, `task_runs`, `events`, `meetings`, `meeting_messages`, `approvals`, `conversation_sessions`, `conversation_messages`, `page_views`, `agent_memories`. Migrations live in `apps/server/drizzle/`.
+PostgreSQL with Drizzle ORM. Schema in `apps/server/src/db/schema.ts`. Tables: `agents`, `task_runs`, `events`, `meetings`, `meeting_messages`, `approvals`, `conversation_sessions`, `conversation_messages`, `page_views`, `agent_memories`, `price_tests`, `price_test_variants`. Migrations live in `apps/server/drizzle/`.
 
 ## Architecture
 
@@ -51,13 +51,14 @@ Tools are defined per-agent as JSON schemas (stored in `agents.tools` JSONB colu
 - `tools/ads.ts` — Meta Ads campaign management (create, pause, activate, duplicate, compare, budget, targeting)
 - `tools/analytics.ts` — ZapGPT usage analytics (usage summary, top users, daily trends, model breakdown)
 - `tools/traffic.ts` — LP traffic analytics (summary, by source, daily, UTM breakdown, page breakdown)
-- `tools/promo.ts` — getActivePromo, updatePromoConfig (GitHub-backed promo configuration)
+- `tools/promo.ts` — getActivePromo, updatePromoConfig, startPriceTest, getPriceTestStatus, collectAndAdvancePriceTest (GitHub-backed promo + autonomous price A/B testing)
 - `tools/twitter.ts` — postTweet, getRecentTweets, getMentions (X/Twitter API with free-tier fallback)
 
 Supporting integrations in `integrations/`:
 - `cakto-client.ts` — Cakto payment gateway API client
 - `meta-ads-mcp-client.ts` — Meta Ads API client
 - `zapgpt-db.ts` — Read-only connection to ZapGPT database for analytics
+- `abacatepay-client.ts` — AbacatePay V1 API client (Pix payment revenue tracking)
 
 To add a new tool domain: create `tools/<domain>.ts` with `execute<Domain>Tool()`, register tool names in `tool-executor.ts`.
 
@@ -93,7 +94,7 @@ Zustand stores (`lib/stores/`) + TanStack Query (`lib/queries/`), wired in `app/
 
 ## Environment Variables
 
-See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`, `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`, `META_ADS_APP_ID`, `META_ADS_APP_SECRET`, `ADS_DAILY_BUDGET_LIMIT`, `ZAP_GPT_DATABASE_URL`, `GITHUB_TOKEN`, `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
+See `.env.example`. Required: `DATABASE_URL`, `OZAP_OFFICE_API_KEY`. Optional: `AWS_REGION`, `PORT`, `CORS_ORIGIN`, `CAKTO_CLIENT_ID`, `CAKTO_CLIENT_SECRET`, `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`, `META_ADS_APP_ID`, `META_ADS_APP_SECRET`, `ADS_DAILY_BUDGET_LIMIT`, `ZAP_GPT_DATABASE_URL`, `GITHUB_TOKEN`, `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`, `ABACATEPAY_API_KEY`. Frontend uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_KEY`.
 
 ## Infrastructure & Deployment
 
