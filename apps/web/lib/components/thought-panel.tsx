@@ -297,9 +297,6 @@ export const ThoughtPanel = () => {
   )
   const responseEvents = nonDelegationEvents.filter((e) => e.type === "message")
   const errorEvent = nonDelegationEvents.find((e) => e.type === "error")
-  const currentResponse = responseEvents.length > 0
-    ? responseEvents.map((e) => e.content).join("\n\n")
-    : null
   const userMessageEvent = events.find((e) => e.type === "user_message")
   const currentUserMessage = pendingMessage ?? userMessageEvent?.content ?? null
   const isProcessing = events.length > 0 && !events.some((e) => e.type === "completed" || e.type === "error")
@@ -390,7 +387,7 @@ export const ThoughtPanel = () => {
                   {lastRunResponse ? (
                     <AgentBubble key={lastRunResponse.id} content={lastRunResponse.content} />
                   ) : (
-                    currentResponse && <AgentBubble content={currentResponse} />
+                    responseEvents.map((e) => <AgentBubble key={e.id} content={e.content} />)
                   )}
                   {isProcessing && <TypingIndicator />}
                 </div>
