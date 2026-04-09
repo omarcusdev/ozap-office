@@ -246,7 +246,8 @@ const runAgenticLoop = async (
   messages: Message[],
   agentTools: ToolDefinition[],
   bedrockTools: any[],
-  delegationCtx?: DelegationContext
+  delegationCtx?: DelegationContext,
+  accumulatedTexts: string[] = []
 ): Promise<void> => {
   await updateAgentStatus(agent.id, "thinking")
   await emitEvent(agent.id, taskRunId, "thinking", "Processing...")
@@ -261,6 +262,7 @@ const runAgenticLoop = async (
   const toolUseBlocks = extractToolUseBlocks(result.output)
 
   if (textContent) {
+    accumulatedTexts.push(textContent)
     await emitEvent(agent.id, taskRunId, "message", textContent)
   }
 
@@ -299,14 +301,15 @@ const runAgenticLoop = async (
     }
 
     messages.push({ role: "user", content: toolResultContents })
-    return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools, delegationCtx)
+    return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools, delegationCtx, accumulatedTexts)
   }
 
+  const fullResponse = accumulatedTexts.join("\n\n")
   await db
     .update(taskRuns)
-    .set({ status: "completed", output: { result: textContent }, completedAt: new Date() })
+    .set({ status: "completed", output: { result: fullResponse }, completedAt: new Date() })
     .where(eq(taskRuns.id, taskRunId))
-  await emitEvent(agent.id, taskRunId, "completed", textContent || "Task completed")
+  await emitEvent(agent.id, taskRunId, "completed", fullResponse || "Task completed")
 }
 
 export const executeAgentForMeeting = async (
