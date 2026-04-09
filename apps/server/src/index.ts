@@ -12,6 +12,7 @@ import { registerTrackingRoutes } from "./routes/tracking.js"
 import { registerWebSocket } from "./events/websocket.js"
 import { startScheduler } from "./scheduler/index.js"
 import { recoverOrphanedTaskRuns } from "./startup.js"
+import { registerXTrigger } from "./events/x-trigger.js"
 
 const buildServer = async () => {
   const server = Fastify({ logger: true })
@@ -37,6 +38,7 @@ const start = async () => {
 
   await recoverOrphanedTaskRuns()
   startScheduler()
+  await registerXTrigger()
 
   await server.listen({ port: config.port, host: "0.0.0.0" })
   console.log(`Server running on port ${config.port}`)
