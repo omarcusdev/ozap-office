@@ -16,7 +16,6 @@ export const SessionTabBar = ({ agentId }: SessionTabBarProps) => {
   const deleteSession = useDeleteSessionMutation(agentId)
 
   const handleNewSession = () => {
-    if (createSession.isPending) return
     createSession.mutate(undefined, {
       onSuccess: (session) => {
         setActiveSessionId(session.id)
@@ -55,12 +54,13 @@ export const SessionTabBar = ({ agentId }: SessionTabBarProps) => {
               {session.title ?? "Untitled"}
             </span>
             {!isActive && (
-              <span
+              <button
+                type="button"
                 onClick={(e) => handleDeleteSession(e, session.id)}
                 className="opacity-0 group-hover:opacity-100 text-mute hover:text-coral transition-all"
               >
                 <X className="w-2.5 h-2.5" />
-              </span>
+              </button>
             )}
           </button>
         )
