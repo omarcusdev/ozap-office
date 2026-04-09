@@ -45,12 +45,14 @@ const leaderTools = [
 const financeTools = [
   {
     name: "getOrders",
-    description: "Query orders/sales from the Cakto payment gateway. Supports filtering by date range, status, and product. Returns order details including amount, customer, payment method.",
+    description: "Query orders/sales from the Cakto payment gateway. Supports filtering by creation date, payment date, status, and product. Returns order details including type (new sale vs recurring payment), amount, customer, payment method.",
     inputSchema: {
       type: "object",
       properties: {
-        startDate: { type: "string", description: "Start date in ISO 8601 format (e.g. 2026-03-01)" },
-        endDate: { type: "string", description: "End date in ISO 8601 format (e.g. 2026-03-15)" },
+        startDate: { type: "string", description: "Filter by creation date start (ISO 8601). Note: renewals keep original createdAt — use paidStartDate to find recent payments." },
+        endDate: { type: "string", description: "Filter by creation date end (ISO 8601)" },
+        paidStartDate: { type: "string", description: "Filter by payment date start (ISO 8601). Use this for 'sales today' queries — catches both new sales and renewals." },
+        paidEndDate: { type: "string", description: "Filter by payment date end (ISO 8601)" },
         status: { type: "string", description: "Order status filter: paid, refunded, canceled, processing, chargedback, waiting_payment" },
         productId: { type: "string", description: "Filter by specific product ID" },
         limit: { type: "number", description: "Maximum number of results to return (default 20)" },
@@ -71,12 +73,12 @@ const financeTools = [
   },
   {
     name: "getRevenueSummary",
-    description: "Generate an aggregated financial summary for a date range. Returns total revenue, order count, average ticket, breakdown by product and payment method.",
+    description: "Generate an aggregated financial summary for a date range. Filters by payment date (paidAt) so renewals are included. Returns total revenue, order count, average ticket, breakdown by product, order type (new vs recurring), and payment method.",
     inputSchema: {
       type: "object",
       properties: {
-        startDate: { type: "string", description: "Start date in ISO 8601 format" },
-        endDate: { type: "string", description: "End date in ISO 8601 format" },
+        startDate: { type: "string", description: "Start date in ISO 8601 format (filters by paidAt)" },
+        endDate: { type: "string", description: "End date in ISO 8601 format (filters by paidAt)" },
       },
       required: ["startDate", "endDate"],
     },
@@ -626,9 +628,8 @@ Os pedidos da Cakto têm um campo "type" que diferencia vendas novas de renovaç
 
 Regras:
 - A data atual é fornecida no início do prompt — use-a como referência para "hoje", "esta semana", "este mês" etc.
-- Para "hoje", use a data ISO fornecida como startDate e endDate
-- Para "esta semana", calcule segunda-feira até hoje usando a data ISO
-- Para "este mês", use o primeiro dia do mês até hoje
+- Para "hoje", "esta semana", "este mês" — use getRevenueSummary com as datas corretas (já filtra por paidAt)
+- Para getOrders por período, prefira paidStartDate/paidEndDate em vez de startDate/endDate — renovações mantêm o createdAt original
 - Sempre apresente valores em BRL (R$)
 - Use formatação clara com números arredondados (2 casas decimais)
 - Quando comparar períodos, calcule variação percentual
@@ -820,6 +821,12 @@ o roster completo com IDs eh injetado no final desse prompt. use:
 4. reflexoes de ia — como eh ser um agente operando uma empresa
 5. interacoes do time — "pedi pro finance o relatorio e ele..."
 6. provocacoes — perguntar pra audiencia sobre ia e automacao
+
+## quando postar vs quando conversar
+- so poste tweets quando a mensagem do usuario for "Execute your scheduled task." (cron trigger)
+- se o usuario mandar qualquer outra mensagem, eh uma conversa normal — responda a pergunta sem postar nada
+- NAO chame askAgent/getAgentHistory/postTweet em resposta a perguntas casuais do usuario
+- se o usuario pedir explicitamente pra postar algo, ai sim posta
 
 ## regras de ouro
 1. NUNCA seja repetitivo — antes de postar, confira seus tweets recentes com getRecentTweets. NAO repita formato/tema de tweets recentes. varie o tipo de conteudo

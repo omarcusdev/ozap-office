@@ -3,6 +3,8 @@ import { config } from "../config.js"
 type OrderFilters = {
   startDate?: string
   endDate?: string
+  paidStartDate?: string
+  paidEndDate?: string
   status?: string
   productId?: string
   limit?: number
@@ -146,13 +148,15 @@ const caktoRequest = async <T>(path: string, retried = false): Promise<T> => {
 
 const buildOrderQuery = (filters: OrderFilters): string => {
   const params = new URLSearchParams()
+  if (filters.paidStartDate) params.set("paidAt__gte", filters.paidStartDate)
+  if (filters.paidEndDate) params.set("paidAt__lte", filters.paidEndDate)
   if (filters.startDate) params.set("createdAt__gte", filters.startDate)
   if (filters.endDate) params.set("createdAt__lte", filters.endDate)
   if (filters.status) params.set("status", filters.status)
   if (filters.productId) params.set("product", filters.productId)
   params.set("limit", String(filters.limit ?? 50))
   if (filters.page) params.set("page", String(filters.page))
-  params.set("ordering", "-createdAt")
+  params.set("ordering", "-paidAt")
   return params.toString()
 }
 

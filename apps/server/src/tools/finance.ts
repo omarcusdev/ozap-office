@@ -7,6 +7,8 @@ const getOrders = async (input: Record<string, unknown>): Promise<ToolResult> =>
     const response = await fetchOrders({
       startDate: input.startDate as string | undefined,
       endDate: input.endDate as string | undefined,
+      paidStartDate: input.paidStartDate as string | undefined,
+      paidEndDate: input.paidEndDate as string | undefined,
       status: input.status as string | undefined,
       productId: input.productId as string | undefined,
       limit: (input.limit as number) ?? 20,
@@ -68,7 +70,7 @@ const getRevenueSummary = async (input: Record<string, unknown>): Promise<ToolRe
       return { content: "startDate and endDate are required", isError: true }
     }
 
-    const orders = await fetchAllOrders({ startDate, endDate, status: "paid" })
+    const orders = await fetchAllOrders({ paidStartDate: startDate, paidEndDate: endDate, status: "paid" })
 
     const totalRevenue = orders.reduce((sum, o) => sum + (o.amount ?? 0), 0)
     const orderCount = orders.length
