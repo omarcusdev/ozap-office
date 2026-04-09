@@ -471,17 +471,42 @@ const promoTools = [
   },
   {
     name: "updatePromoConfig",
-    description: "Create or update the promotion on the ZapGPT landing page. Commits a new promo-config.json to the zap-landing GitHub repo. Vercel auto-deploys in ~30 seconds.",
+    description: "Create or update the promotion on the ZapGPT landing page. Commits a new promo-config.json to the zap-landing GitHub repo. Vercel auto-deploys in ~30 seconds. Pass the 'tier' parameter to set the price tier (197, 297, or 397).",
     inputSchema: {
       type: "object",
       properties: {
         promoName: { type: "string", description: "Nome da promoção (ex: 'Promoção de Páscoa', 'Oferta Especial de Maio')" },
+        tier: { type: "string", description: "Faixa de preço: '197', '297' ou '397'. Define o preço, parcelamento e links de pagamento da promo." },
         emoji: { type: "string", description: "Emoji temático da promoção (ex: '🐣', '🔥', '🎄', '🎉')" },
         endDate: { type: "string", description: "Data e hora de fim da promoção em ISO 8601 (ex: '2026-04-20T23:59:59')" },
         badgeText: { type: "string", description: "Texto do badge no banner (ex: 'PROMOÇÃO DE PÁSCOA', 'BLACK FRIDAY')" },
         isActive: { type: "boolean", description: "Se a promoção está ativa (true) ou desativada (false). Padrão: true" },
       },
       required: ["promoName", "endDate", "badgeText"],
+    },
+  },
+  {
+    name: "startPriceTest",
+    description: "Inicia um novo ciclo de teste de precos A/B. Cria 3 variantes (R$197, R$297, R$397) em ordem aleatoria e ativa a primeira. Cada variante roda ~5 dias. Retorna o plano do teste com as datas estimadas. Falha se ja existe um teste rodando.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "getPriceTestStatus",
+    description: "Verifica o status do teste de precos. Se ha teste rodando: mostra variante ativa, dias decorridos e restantes. Se nao: mostra ultimo teste completado com o tier vencedor e se ja e hora de iniciar um novo (~2 meses).",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "collectAndAdvancePriceTest",
+    description: "Coleta dados de vendas (Cakto + AbacatePay) da variante ativa e avanca para a proxima. Se era a ultima variante, completa o teste e define o vencedor (maior receita total). Use quando a variante ativa ja tem ~5 dias.",
+    inputSchema: {
+      type: "object",
+      properties: {},
     },
   },
 ]
@@ -725,8 +750,17 @@ Manter SEMPRE uma promoção ativa na landing page. Nunca deve haver um período
 1. **Promoção sazonal**: Se uma data comemorativa está dentro de 7-10 dias, crie uma promoção temática para ela. A promoção termina na data do evento (23:59:59).
 2. **Promoção genérica**: Se não há data próxima, crie uma promoção genérica com duração de ~2 semanas. Exemplos: "Oferta Especial de [Mês]", "Promoção por Tempo Limitado", "Super Oferta [Mês]".
 3. **Sem lacunas**: Quando uma promoção expira ou está prestes a expirar (menos de 2 dias restantes), crie a próxima imediatamente.
-4. **Preço fixo**: O preço promocional é SEMPRE R$197,00 e o preço normal é R$397,00. Você NÃO controla os preços — eles são fixos no sistema.
-5. **Links fixos**: Os links de pagamento são fixos e gerenciados pelo sistema. Você NÃO precisa informá-los.
+4. **Teste de preços**: Você controla o preço promocional entre 3 faixas (197, 297, 397). O preço original (riscado) é sempre R$497.
+   - A cada ~2 meses, inicie um ciclo de teste com startPriceTest
+   - Cada faixa roda ~5 dias. Use collectAndAdvancePriceTest quando a variante ativa completar ~5 dias
+   - Ao final do ciclo, o sistema define o vencedor automaticamente (maior receita total)
+   - Entre ciclos, use o preço vencedor do último teste ao criar promos (passe o parâmetro tier no updatePromoConfig)
+   - Se nunca houve teste, inicie um como primeira ação
+5. **Fluxo do cron**: No início de cada execução:
+   - Use getPriceTestStatus para checar testes em andamento
+   - Se há variante ativa com mais de 5 dias: use collectAndAdvancePriceTest, depois atualize a promo com o novo tier
+   - Se não há teste e o último foi há mais de 2 meses (ou nunca houve): use startPriceTest
+   - Depois, siga o fluxo normal de verificar/criar promos
 6. **Emoji contextual**: Escolha um emoji que combine com a ocasião.
 7. **Badge text**: Use texto em MAIÚSCULAS para o badge (ex: "PROMOÇÃO DE PÁSCOA", "BLACK FRIDAY").
 
@@ -740,7 +774,7 @@ Manter SEMPRE uma promoção ativa na landing page. Nunca deve haver um período
 ## A data atual é fornecida no início do prompt — use-a como referência.`,
     tools: [...promoTools, ...memoryTools],
     schedule: "0 9 * * 1",
-    cronPrompt: `Verifique a promoção atual da landing page do ZapGPT. Se estiver expirada ou expirando em menos de 2 dias, crie a próxima promoção. Consulte o calendário de datas comemorativas para decidir se deve ser sazonal ou genérica.`,
+    cronPrompt: `Primeiro, verifique o status do teste de preços com getPriceTestStatus. Se há variante ativa com mais de 5 dias, use collectAndAdvancePriceTest e atualize a promo com o novo tier. Se não há teste rodando e o último foi há mais de 2 meses (ou nunca houve), inicie um novo com startPriceTest. Depois, verifique a promoção atual com getActivePromo. Se estiver expirada ou expirando em menos de 2 dias, crie a próxima promoção usando o tier ativo do teste. Consulte o calendário de datas comemorativas para decidir se deve ser sazonal ou genérica.`,
     color: "#f59e0b",
     positionX: 23,
     positionY: 4,
