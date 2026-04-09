@@ -1,4 +1,3 @@
-import cron from "node-cron"
 import { db } from "../db/client.js"
 import { agents } from "../db/schema.js"
 import { eq } from "drizzle-orm"
@@ -14,15 +13,6 @@ const NOTABLE_TOOLS = [
 ]
 
 const COOLDOWN_MS = 60 * 60 * 1000
-
-const ENGAGEMENT_PROMPT = `checa se alguem te mencionou ou respondeu no x.
-
-1. usa getMentions pra ver mencoes recentes
-2. se getMentions retornar vazio com fallbackReason, para aqui — sem acesso de leitura
-3. checa na memoria (core memory key: "last_mention_check") qual foi a ultima mencao respondida
-4. responde as mencoes interessantes com postTweet usando replyToId
-5. atualiza "last_mention_check" na core memory com o id da ultima mencao processada
-6. ignora trolls e spam, responde so o que agrega`
 
 const buildEventPrompt = (agentName: string, summary: string) =>
   `o agente ${agentName} acabou de completar uma tarefa.\n\ncontexto: ${summary}\n\nse for algo interessante, posta sobre isso no x. se n for, ignora.\ncheca seus tweets recentes antes pra n repetir tema.`
@@ -83,19 +73,5 @@ export const registerXTrigger = async () => {
     })
   })
 
-  cron.schedule("*/30 * * * *", async () => {
-    const [currentX] = await db
-      .select({ status: agents.status })
-      .from(agents)
-      .where(eq(agents.id, xAgentId))
-
-    if (currentX?.status !== "idle") return
-
-    console.log("X trigger: engagement cron — checking mentions")
-    executeAgent(xAgentId, "cron", ENGAGEMENT_PROMPT).catch((err) => {
-      console.error("X engagement cron failed:", err)
-    })
-  })
-
-  console.log("X trigger registered: event listener + engagement cron (*/30 * * * *)")
+  console.log("X trigger registered: event listener for notable agent events")
 }
