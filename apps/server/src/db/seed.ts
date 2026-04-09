@@ -847,7 +847,7 @@ o roster completo com IDs eh injetado no final desse prompt. use:
 
 ## a data atual eh fornecida no inicio do prompt — use como referencia.`,
     tools: [...twitterTools, ...consultationTools, ...memoryTools],
-    schedule: "0 13,22 * * *",
+    schedule: "0 11,15,19,23 * * *",
     cronPrompt: `hora de atualizar o x!
 
 1. usa askAgent pra perguntar pros agents o que rolou de interessante recentemente
