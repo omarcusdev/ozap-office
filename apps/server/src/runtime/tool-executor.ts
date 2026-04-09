@@ -6,6 +6,7 @@ import { executeAdsTool } from "../tools/ads.js"
 import { executeAnalyticsTool } from "../tools/analytics.js"
 import { executeTrafficTool } from "../tools/traffic.js"
 import { executePromoTool } from "../tools/promo.js"
+import { executeTwitterTool } from "../tools/twitter.js"
 
 type ToolResult = {
   content: string
@@ -37,6 +38,7 @@ const TRAFFIC_TOOLS = [
   "getPageBreakdown",
 ]
 const PROMO_TOOLS = ["getActivePromo", "updatePromoConfig"]
+const TWITTER_TOOLS = ["postTweet", "getRecentTweets", "getMentions"]
 const ANALYTICS_TOOLS = [
   "getUsageSummary",
   "getTopUsers",
@@ -82,6 +84,10 @@ export const executeTool = async (
 
     if (PROMO_TOOLS.includes(toolName)) {
       return executePromoTool(toolName, toolInput)
+    }
+
+    if (TWITTER_TOOLS.includes(toolName)) {
+      return executeTwitterTool(agentId, toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }

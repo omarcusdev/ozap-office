@@ -175,7 +175,9 @@ export const executeAgent = async (
   if (!agent) throw new Error(`Agent ${agentId} not found`)
 
   const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
-  const teamRoster = agent.name === "Leader" ? await buildTeamRosterBlock(agentId) : ""
+  const agentToolNames = (agent.tools as ToolDefinition[]).map((t) => t.name)
+  const needsRoster = agentToolNames.includes("askAgent") || agentToolNames.includes("getAgentHistory")
+  const teamRoster = needsRoster ? await buildTeamRosterBlock(agentId) : ""
   const systemPrompt = buildDateContext() + "\n\n" + agent.systemPrompt + coreMemoryBlock + teamRoster
 
   const [taskRun] = await db
