@@ -41,10 +41,13 @@ export const SessionTabBar = ({ agentId }: SessionTabBarProps) => {
       {sessions.map((session) => {
         const isActive = session.id === activeSessionId
         return (
-          <button
+          <div
             key={session.id}
+            role="tab"
+            tabIndex={0}
             onClick={() => setActiveSessionId(session.id)}
-            className={`group shrink-0 flex items-center gap-1.5 px-3.5 py-2 font-mono text-[11px] transition-colors ${
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setActiveSessionId(session.id) }}
+            className={`group shrink-0 flex items-center gap-1.5 px-3.5 py-2 font-mono text-[11px] transition-colors cursor-pointer ${
               isActive
                 ? "text-gold border-b-2 border-gold bg-surface"
                 : "text-sand hover:text-cream"
@@ -62,7 +65,7 @@ export const SessionTabBar = ({ agentId }: SessionTabBarProps) => {
                 <X className="w-2.5 h-2.5" />
               </button>
             )}
-          </button>
+          </div>
         )
       })}
     </div>
