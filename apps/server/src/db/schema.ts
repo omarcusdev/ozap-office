@@ -151,3 +151,34 @@ export const agentMemories = pgTable(
     index("agent_memories_agent_category_idx").on(table.agentId, table.category),
   ]
 )
+
+export const priceTests = pgTable("price_tests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id").notNull().references(() => agents.id),
+  status: text("status").notNull().default("running"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  winnerTier: text("winner_tier"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const priceTestVariants = pgTable(
+  "price_test_variants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    testId: uuid("test_id").notNull().references(() => priceTests.id),
+    tier: text("tier").notNull(),
+    order: integer("order").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    salesCount: integer("sales_count"),
+    totalRevenue: integer("total_revenue"),
+    caktoRevenue: integer("cakto_revenue"),
+    pixRevenue: integer("pix_revenue"),
+    pixPaidSnapshotStart: integer("pix_paid_snapshot_start"),
+    pixPaidSnapshotEnd: integer("pix_paid_snapshot_end"),
+  },
+  (table) => [
+    index("price_test_variants_test_idx").on(table.testId, table.order),
+  ]
+)

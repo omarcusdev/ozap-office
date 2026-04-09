@@ -43,6 +43,13 @@
       "when": 1775055705054,
       "tag": "0005_wealthy_blur",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775696317419,
+      "tag": "0006_cultured_zuras",
+      "breakpoints": true
     }
   ]
 }
