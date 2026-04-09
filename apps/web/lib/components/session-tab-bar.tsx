@@ -15,7 +15,11 @@ export const SessionTabBar = ({ agentId }: SessionTabBarProps) => {
   const createSession = useCreateSessionMutation(agentId)
   const deleteSession = useDeleteSessionMutation(agentId)
 
+  const messages = useConversationStore((s) => s.messages)
+
   const handleNewSession = () => {
+    if (createSession.isPending) return
+    if (activeSessionId && messages.length === 0) return
     createSession.mutate(undefined, {
       onSuccess: (session) => {
         setActiveSessionId(session.id)
