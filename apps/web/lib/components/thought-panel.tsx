@@ -8,7 +8,7 @@ import { useAgentsQuery } from "@/lib/queries/agent-queries"
 import { useConversationQuery, useClearConversationMutation, useSendMessageMutation } from "@/lib/queries/conversation-queries"
 import { useSessionsQuery } from "@/lib/queries/session-queries"
 import { MarkdownRenderer } from "./markdown-renderer"
-import { SessionPicker } from "./session-picker"
+import { SessionTabBar } from "./session-tab-bar"
 import { DelegationThread, groupDelegationEvents } from "./delegation-thread"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
@@ -358,10 +358,9 @@ export const ThoughtPanel = () => {
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
                 <span className="text-[11px] font-mono text-sand tracking-wide">{selectedAgent.status}</span>
               </div>
-              <div className="mt-3">
-                <SessionPicker agentId={selectedAgentId!} />
-              </div>
             </div>
+
+            <SessionTabBar agentId={selectedAgentId!} />
 
             <div ref={scrollRef} onScroll={checkNearBottom} className="flex-1 overflow-y-auto relative">
               {!hasContent ? (
