@@ -307,6 +307,8 @@ export const ThoughtPanel = () => {
   const runCompleted = events.some((e) => e.type === "completed")
   const runAlreadyInConversation = !!userMessageEvent && runCompleted &&
     conversation.some((m) => m.role === "user" && m.content === userMessageEvent.content)
+  const conversationBeforeRun = runAlreadyInConversation ? conversation.slice(0, -1) : conversation
+  const lastRunResponse = runAlreadyInConversation ? conversation[conversation.length - 1] : null
   const hasContent = conversation.length > 0 || events.length > 0 || pendingMessage
 
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
@@ -369,7 +371,7 @@ export const ThoughtPanel = () => {
                 </div>
               ) : (
                 <div className="py-3 space-y-1">
-                  {conversation.map((msg) =>
+                  {conversationBeforeRun.map((msg) =>
                     msg.role === "user" ? (
                       <UserBubble key={msg.id} message={msg.content} />
                     ) : (
@@ -386,7 +388,11 @@ export const ThoughtPanel = () => {
                     <DelegationThread key={pair.start.id} pair={pair} />
                   ))}
                   {errorEvent && <ErrorBanner content={errorEvent.content} />}
-                  {!runAlreadyInConversation && currentResponse && <AgentBubble content={currentResponse} />}
+                  {lastRunResponse ? (
+                    <AgentBubble key={lastRunResponse.id} content={lastRunResponse.content} />
+                  ) : (
+                    currentResponse && <AgentBubble content={currentResponse} />
+                  )}
                   {isProcessing && <TypingIndicator />}
                 </div>
               )}
