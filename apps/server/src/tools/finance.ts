@@ -15,6 +15,7 @@ const getOrders = async (input: Record<string, unknown>): Promise<ToolResult> =>
     const orders = response.results.map((o) => ({
       id: o.id,
       refId: o.refId,
+      type: o.type,
       status: o.status,
       amount: o.amount,
       product: o.product.name,
@@ -93,12 +94,25 @@ const getRevenueSummary = async (input: Record<string, unknown>): Promise<ToolRe
       })
     }
 
+    const typeMap = new Map<string, { revenue: number; count: number }>()
+    for (const order of orders) {
+      const type = order.type ?? "unknown"
+      const existing = typeMap.get(type) ?? { revenue: 0, count: 0 }
+      typeMap.set(type, {
+        revenue: existing.revenue + (order.amount ?? 0),
+        count: existing.count + 1,
+      })
+    }
+
     const summary = {
       totalRevenue: Math.round(totalRevenue * 100) / 100,
       orderCount,
       averageTicket: Math.round(averageTicket * 100) / 100,
       byProduct: [...productMap.entries()]
         .map(([name, data]) => ({ name, revenue: Math.round(data.revenue * 100) / 100, count: data.count }))
+        .sort((a, b) => b.revenue - a.revenue),
+      byType: [...typeMap.entries()]
+        .map(([type, data]) => ({ type, revenue: Math.round(data.revenue * 100) / 100, count: data.count }))
         .sort((a, b) => b.revenue - a.revenue),
       byPaymentMethod: [...paymentMap.entries()]
         .map(([method, data]) => ({ method, revenue: Math.round(data.revenue * 100) / 100, count: data.count }))
