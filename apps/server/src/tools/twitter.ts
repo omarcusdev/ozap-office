@@ -38,26 +38,6 @@ const postTweet = async (_agentId: string, input: Record<string, unknown>): Prom
 const getRecentTweets = async (agentId: string, input: Record<string, unknown>): Promise<ToolResult> => {
   const limit = (input.limit as number) ?? 10
 
-  if (twitterClient) {
-    try {
-      const me = await twitterClient.v2.me()
-      const timeline = await twitterClient.v2.userTimeline(me.data.id, {
-        max_results: Math.min(Math.max(limit, 5), 100),
-        "tweet.fields": ["created_at", "public_metrics"],
-      })
-
-      const tweets = timeline.data.data?.map((t) => ({
-        id: t.id,
-        text: t.text,
-        createdAt: t.created_at,
-        metrics: t.public_metrics,
-      })) ?? []
-
-      return { content: JSON.stringify({ source: "api", tweets }) }
-    } catch {
-    }
-  }
-
   const archived = await db
     .select()
     .from(agentMemories)
