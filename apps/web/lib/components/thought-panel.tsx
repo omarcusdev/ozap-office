@@ -309,7 +309,6 @@ export const ThoughtPanel = () => {
     conversation.some((m) => m.role === "user" && m.content === userMessageEvent.content)
   const conversationBeforeRun = runAlreadyInConversation ? conversation.slice(0, -1) : conversation
   const lastRunResponse = runAlreadyInConversation ? conversation[conversation.length - 1] : null
-  const intermediateMessages = runAlreadyInConversation ? responseEvents.slice(0, -1) : []
   const hasContent = conversation.length > 0 || events.length > 0 || pendingMessage
 
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
@@ -383,9 +382,6 @@ export const ThoughtPanel = () => {
                   {!runAlreadyInConversation && !currentUserMessage && taskRunInfo && events.length > 0 && (
                     <TaskRunBanner trigger={taskRunInfo.trigger} input={taskRunInfo.input} />
                   )}
-                  {intermediateMessages.map((evt) => (
-                    <AgentBubble key={evt.id} content={evt.content} />
-                  ))}
                   {internalEvents.length > 0 && <InternalDetails events={internalEvents} defaultExpanded={isAgentActive || !!errorEvent} />}
                   {delegations.map((pair) => (
                     <DelegationThread key={pair.start.id} pair={pair} />

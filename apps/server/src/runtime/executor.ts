@@ -193,7 +193,7 @@ export const executeAgent = async (
 
   await updateAgentStatus(agentId, "working")
 
-  if (inputContext && trigger === "manual") {
+  if (inputContext) {
     await emitEvent(agentId, taskRun.id, "user_message", inputContext)
   }
 
