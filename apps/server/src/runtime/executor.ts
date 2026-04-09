@@ -145,9 +145,11 @@ const loadConversationHistory = async (agentId: string): Promise<Message[]> => {
 }
 
 const saveConversationTurn = async (agentId: string, sessionId: string, userMessage: string, assistantResponse: string) => {
+  const userTime = new Date()
+  const assistantTime = new Date(userTime.getTime() + 1)
   await db.insert(conversationMessages).values([
-    { agentId, sessionId, role: "user", content: userMessage },
-    { agentId, sessionId, role: "assistant", content: assistantResponse },
+    { agentId, sessionId, role: "user", content: userMessage, createdAt: userTime },
+    { agentId, sessionId, role: "assistant", content: assistantResponse, createdAt: assistantTime },
   ])
   await db
     .update(conversationSessions)
