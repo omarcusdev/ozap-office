@@ -49,6 +49,36 @@ const buildCoreMemoryBlock = async (agentId: string): Promise<string> => {
   return `\n\n## Your Current Memory\n${entries}`
 }
 
+const BR_HOLIDAYS: Array<{ month: number; day: number; name: string }> = [
+  { month: 1, day: 1, name: "Ano Novo" },
+  { month: 4, day: 21, name: "Tiradentes" },
+  { month: 5, day: 1, name: "Dia do Trabalho" },
+  { month: 5, day: 11, name: "Dia das Mães" },
+  { month: 6, day: 12, name: "Dia dos Namorados" },
+  { month: 6, day: 19, name: "Corpus Christi" },
+  { month: 8, day: 10, name: "Dia dos Pais" },
+  { month: 9, day: 7, name: "Independência do Brasil" },
+  { month: 10, day: 12, name: "Dia das Crianças / Nossa Sra. Aparecida" },
+  { month: 11, day: 2, name: "Finados" },
+  { month: 11, day: 15, name: "Proclamação da República" },
+  { month: 11, day: 28, name: "Black Friday" },
+  { month: 12, day: 25, name: "Natal" },
+]
+
+const getUpcomingHolidays = (now: Date): string => {
+  const brNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
+  const currentMonth = brNow.getMonth() + 1
+  const currentDay = brNow.getDate()
+
+  const upcoming = BR_HOLIDAYS.filter(
+    (h) => h.month > currentMonth || (h.month === currentMonth && h.day >= currentDay)
+  ).slice(0, 3)
+
+  if (upcoming.length === 0) return ""
+  const formatted = upcoming.map((h) => `${h.name} (${String(h.day).padStart(2, "0")}/${String(h.month).padStart(2, "0")})`).join(", ")
+  return ` | Próximos feriados/datas: ${formatted}`
+}
+
 const buildDateContext = (): string => {
   const now = new Date()
   const dateStr = now.toLocaleDateString("pt-BR", {
@@ -64,7 +94,8 @@ const buildDateContext = (): string => {
     timeZone: "America/Sao_Paulo",
   })
   const isoDate = now.toISOString().split("T")[0]
-  return `[Data atual: ${dateStr}, ${timeStr} (São Paulo/BRT) | ISO: ${isoDate}]`
+  const holidays = getUpcomingHolidays(now)
+  return `[Data atual: ${dateStr}, ${timeStr} (São Paulo/BRT) | ISO: ${isoDate}${holidays}]`
 }
 
 const buildTeamRosterBlock = async (currentAgentId: string): Promise<string> => {
