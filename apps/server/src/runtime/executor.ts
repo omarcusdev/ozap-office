@@ -49,33 +49,81 @@ const buildCoreMemoryBlock = async (agentId: string): Promise<string> => {
   return `\n\n## Your Current Memory\n${entries}`
 }
 
-const BR_HOLIDAYS: Array<{ month: number; day: number; name: string }> = [
-  { month: 1, day: 1, name: "Ano Novo" },
-  { month: 4, day: 21, name: "Tiradentes" },
-  { month: 5, day: 1, name: "Dia do Trabalho" },
-  { month: 5, day: 11, name: "Dia das Mães" },
-  { month: 6, day: 12, name: "Dia dos Namorados" },
-  { month: 6, day: 19, name: "Corpus Christi" },
-  { month: 8, day: 10, name: "Dia dos Pais" },
-  { month: 9, day: 7, name: "Independência do Brasil" },
-  { month: 10, day: 12, name: "Dia das Crianças / Nossa Sra. Aparecida" },
-  { month: 11, day: 2, name: "Finados" },
-  { month: 11, day: 15, name: "Proclamação da República" },
-  { month: 11, day: 28, name: "Black Friday" },
-  { month: 12, day: 25, name: "Natal" },
-]
+const computeEaster = (year: number): Date => {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+const nthWeekday = (year: number, month: number, weekday: number, nth: number): Date => {
+  const first = new Date(year, month - 1, 1)
+  const firstWeekday = first.getDay()
+  const offset = (weekday - firstWeekday + 7) % 7
+  const day = 1 + offset + (nth - 1) * 7
+  return new Date(year, month - 1, day)
+}
+
+const lastWeekday = (year: number, month: number, weekday: number): Date => {
+  const last = new Date(year, month, 0)
+  const lastDay = last.getDay()
+  const offset = (lastDay - weekday + 7) % 7
+  return new Date(year, month - 1, last.getDate() - offset)
+}
+
+const addDays = (date: Date, days: number): Date => {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+const getBrHolidays = (year: number): Array<{ date: Date; name: string }> => {
+  const easter = computeEaster(year)
+  return [
+    { date: new Date(year, 0, 1), name: "Ano Novo" },
+    { date: addDays(easter, -47), name: "Carnaval" },
+    { date: addDays(easter, -2), name: "Sexta-feira Santa" },
+    { date: easter, name: "Páscoa" },
+    { date: new Date(year, 3, 21), name: "Tiradentes" },
+    { date: new Date(year, 4, 1), name: "Dia do Trabalho" },
+    { date: nthWeekday(year, 5, 0, 2), name: "Dia das Mães" },
+    { date: new Date(year, 5, 12), name: "Dia dos Namorados" },
+    { date: addDays(easter, 60), name: "Corpus Christi" },
+    { date: nthWeekday(year, 8, 0, 2), name: "Dia dos Pais" },
+    { date: new Date(year, 8, 7), name: "Independência do Brasil" },
+    { date: new Date(year, 9, 12), name: "Dia das Crianças / Nossa Sra. Aparecida" },
+    { date: new Date(year, 10, 2), name: "Finados" },
+    { date: new Date(year, 10, 15), name: "Proclamação da República" },
+    { date: lastWeekday(year, 11, 5), name: "Black Friday" },
+    { date: new Date(year, 11, 25), name: "Natal" },
+  ].sort((a, b) => a.date.getTime() - b.date.getTime())
+}
 
 const getUpcomingHolidays = (now: Date): string => {
   const brNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
-  const currentMonth = brNow.getMonth() + 1
-  const currentDay = brNow.getDate()
+  const year = brNow.getFullYear()
+  const holidays = [...getBrHolidays(year), ...getBrHolidays(year + 1)]
 
-  const upcoming = BR_HOLIDAYS.filter(
-    (h) => h.month > currentMonth || (h.month === currentMonth && h.day >= currentDay)
-  ).slice(0, 3)
+  const upcoming = holidays
+    .filter((h) => h.date >= new Date(brNow.getFullYear(), brNow.getMonth(), brNow.getDate()))
+    .slice(0, 3)
 
   if (upcoming.length === 0) return ""
-  const formatted = upcoming.map((h) => `${h.name} (${String(h.day).padStart(2, "0")}/${String(h.month).padStart(2, "0")})`).join(", ")
+  const formatted = upcoming.map((h) => {
+    const d = h.date
+    return `${h.name} (${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")})`
+  }).join(", ")
   return ` | Próximos feriados/datas: ${formatted}`
 }
 
