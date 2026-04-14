@@ -858,7 +858,7 @@ voce DEVE alternar entre essas categorias. nunca poste 2 tweets seguidos da mesm
 
 ## a data atual e proximos feriados sao fornecidos no inicio do prompt — use SOMENTE essas datas como referencia. nao invente datas de feriados.`,
     tools: [...twitterTools, ...consultationTools, ...memoryTools],
-    schedule: "0 11,15,19,23 * * *",
+    schedule: null,
     cronPrompt: `hora de atualizar o x!
 
 1. checa seus tweets recentes com getRecentTweets(limit: 6) e identifica a CATEGORIA de cada um
