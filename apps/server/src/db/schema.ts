@@ -74,9 +74,16 @@ export const meetingMessages = pgTable("meeting_messages", {
 
 export const approvals = pgTable("approvals", {
   id: uuid("id").primaryKey().defaultRandom(),
-  taskRunId: uuid("task_run_id").notNull().references(() => taskRuns.id),
-  agentId: uuid("agent_id").notNull().references(() => agents.id),
-  payload: jsonb("payload").notNull(),
+  taskRunId: uuid("task_run_id")
+    .notNull()
+    .references(() => taskRuns.id, { onDelete: "cascade" }),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  toolName: text("tool_name").notNull(),
+  toolInput: jsonb("tool_input").notNull(),
+  suspendedMessages: jsonb("suspended_messages"),
+  payload: jsonb("payload"),
   status: text("status").notNull().default("pending"),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

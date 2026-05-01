@@ -50,6 +50,13 @@
       "when": 1775696317419,
       "tag": "0006_cultured_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777664906940,
+      "tag": "0007_tranquil_the_call",
+      "breakpoints": true
     }
   ]
 }
