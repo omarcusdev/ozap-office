@@ -7,10 +7,17 @@ import {
   type SystemContentBlock,
 } from "@aws-sdk/client-bedrock-runtime"
 import { config } from "../config.js"
+import type { InferenceConfig } from "@ozap-office/shared"
 
 const client = new BedrockRuntimeClient({ region: config.awsRegion })
 
 const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6"
+const MODEL_PREFIX = "us.anthropic."
+const VALID_MODELS = new Set([
+  "claude-sonnet-4-6",
+  "claude-haiku-4-5",
+  "claude-opus-4-7",
+])
 const DEFAULT_MAX_TOKENS = 4096
 const RETRYABLE_ERRORS = [
   "ThrottlingException",
@@ -26,7 +33,7 @@ type ConverseInput = {
   messages: Message[]
   systemPrompt: string
   tools: Tool[]
-  modelId?: string
+  inferenceConfig?: InferenceConfig | null
 }
 
 type ConverseResult = {
@@ -53,12 +60,30 @@ const computeBackoff = (attempt: number): number => {
   return exponential + jitter
 }
 
+const resolveModelId = (model: string | undefined): string => {
+  if (model && VALID_MODELS.has(model)) return `${MODEL_PREFIX}${model}`
+  return DEFAULT_MODEL
+}
+
 export const converse = async ({
   messages,
   systemPrompt,
   tools,
-  modelId = DEFAULT_MODEL,
+  inferenceConfig,
 }: ConverseInput): Promise<ConverseResult> => {
+  const modelId = resolveModelId(inferenceConfig?.model)
+  const maxTokens = inferenceConfig?.maxTokens ?? DEFAULT_MAX_TOKENS
+  const temperature = inferenceConfig?.temperature
+
+  const additionalModelRequestFields = inferenceConfig?.thinking?.enabled
+    ? {
+        thinking: {
+          type: "enabled",
+          budget_tokens: inferenceConfig.thinking.budgetTokens,
+        },
+      }
+    : undefined
+
   const cachedTools: Tool[] =
     tools.length > 0 ? [...tools, { cachePoint: { type: "default" } } as Tool] : []
 
@@ -70,7 +95,11 @@ export const converse = async ({
     ],
     messages,
     toolConfig: cachedTools.length > 0 ? { tools: cachedTools } : undefined,
-    inferenceConfig: { maxTokens: DEFAULT_MAX_TOKENS },
+    inferenceConfig: {
+      maxTokens,
+      ...(temperature !== undefined && { temperature }),
+    },
+    ...(additionalModelRequestFields && { additionalModelRequestFields }),
   })
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -89,7 +118,9 @@ export const converse = async ({
     } catch (error) {
       if (attempt === MAX_ATTEMPTS - 1 || !isRetryable(error)) throw error
       console.warn(
-        `[bedrock] retry ${attempt + 1}/${MAX_ATTEMPTS} after ${(error as { name?: string })?.name ?? "error"}`
+        `[bedrock] retry ${attempt + 1}/${MAX_ATTEMPTS} after ${
+          (error as { name?: string })?.name ?? "error"
+        }`
       )
       await sleep(computeBackoff(attempt))
     }

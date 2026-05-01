@@ -8,7 +8,7 @@ import { config } from "../config.js"
 import type { DelegationContext } from "../tools/leader.js"
 import { classifyToolCall } from "./tool-gateway.js"
 import { eventBus } from "../events/event-bus.js"
-import type { AgentEventType, ToolDefinition } from "@ozap-office/shared"
+import type { AgentEventType, ToolDefinition, InferenceConfig } from "@ozap-office/shared"
 
 const updateAgentStatus = async (agentId: string, status: string) => {
   await db.update(agents).set({ status, updatedAt: new Date() }).where(eq(agents.id, agentId))
@@ -292,7 +292,11 @@ export const executeAgent = async (
     messages.push({ role: "user", content: [{ text: "Execute your scheduled task." }] })
   }
 
-  const agentWithPrompt = { id: agent.id, systemPrompt }
+  const agentWithPrompt = {
+    id: agent.id,
+    systemPrompt,
+    inferenceConfig: agent.inferenceConfig as InferenceConfig | null,
+  }
   const delegationCtx = agent.name === "Leader"
     ? { leaderAgentId: agentId, leaderTaskRunId: taskRun.id } as DelegationContext
     : undefined
@@ -328,7 +332,7 @@ export const executeAgent = async (
 }
 
 const runAgenticLoop = async (
-  agent: { id: string; systemPrompt: string },
+  agent: { id: string; systemPrompt: string; inferenceConfig: InferenceConfig | null },
   taskRunId: string,
   messages: Message[],
   agentTools: ToolDefinition[],
@@ -347,6 +351,7 @@ const runAgenticLoop = async (
       messages,
       systemPrompt: agent.systemPrompt,
       tools: bedrockTools,
+      inferenceConfig: agent.inferenceConfig,
     })
 
     const textContent = extractTextContent(result.output)
@@ -461,7 +466,11 @@ export const executeAgentForMeeting = async (
   if (!agent) return `Agent ${agentId} not found`
 
   const coreMemoryBlock = await buildCoreMemoryBlock(agentId)
-  const agentWithMemory = { ...agent, systemPrompt: agent.systemPrompt + coreMemoryBlock }
+  const agentWithMemory = {
+    ...agent,
+    systemPrompt: agent.systemPrompt + coreMemoryBlock,
+    inferenceConfig: agent.inferenceConfig as InferenceConfig | null,
+  }
 
   const agentTools = agentWithMemory.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
@@ -555,7 +564,11 @@ export const resumeAfterApproval = async (
   const agentTools = agent.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
   await runAgenticLoop(
-    { id: agent.id, systemPrompt: agent.systemPrompt },
+    {
+      id: agent.id,
+      systemPrompt: agent.systemPrompt,
+      inferenceConfig: agent.inferenceConfig as InferenceConfig | null,
+    },
     approval.taskRunId,
     savedMessages,
     agentTools,
