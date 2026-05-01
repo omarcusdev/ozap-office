@@ -9,3 +9,4 @@ dist/
 .playwright-mcp/
 .superpowers/
 docs/workflow/
+prod-*.png
