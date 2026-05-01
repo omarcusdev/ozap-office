@@ -4,6 +4,7 @@ import { agents, taskRuns, events, agentMemories, conversationMessages, conversa
 import { eq, and, desc, sql } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
+import { config } from "../config.js"
 import type { DelegationContext } from "../tools/leader.js"
 import { eventBus } from "../events/event-bus.js"
 import type { AgentEventType, ToolDefinition } from "@ozap-office/shared"
@@ -327,27 +328,32 @@ const runAgenticLoop = async (
   messages: Message[],
   agentTools: ToolDefinition[],
   bedrockTools: any[],
-  delegationCtx?: DelegationContext,
-  accumulatedTexts: string[] = []
+  delegationCtx?: DelegationContext
 ): Promise<void> => {
-  await updateAgentStatus(agent.id, "thinking")
-  await emitEvent(agent.id, taskRunId, "thinking", "Processing...")
+  const accumulatedTexts: string[] = []
+  let step = 0
 
-  const result = await converse({
-    messages,
-    systemPrompt: agent.systemPrompt,
-    tools: bedrockTools,
-  })
+  while (step < config.maxAgentSteps) {
+    step++
+    await updateAgentStatus(agent.id, "thinking")
+    await emitEvent(agent.id, taskRunId, "thinking", "Processing...", { step })
 
-  const textContent = extractTextContent(result.output)
-  const toolUseBlocks = extractToolUseBlocks(result.output)
+    const result = await converse({
+      messages,
+      systemPrompt: agent.systemPrompt,
+      tools: bedrockTools,
+    })
 
-  if (textContent) {
-    accumulatedTexts.push(textContent)
-    await emitEvent(agent.id, taskRunId, "message", textContent)
-  }
+    const textContent = extractTextContent(result.output)
+    const toolUseBlocks = extractToolUseBlocks(result.output)
 
-  if (result.stopReason === "tool_use" && toolUseBlocks.length > 0) {
+    if (textContent) {
+      accumulatedTexts.push(textContent)
+      await emitEvent(agent.id, taskRunId, "message", textContent)
+    }
+
+    if (result.stopReason !== "tool_use" || toolUseBlocks.length === 0) break
+
     await updateAgentStatus(agent.id, "working")
     messages.push({ role: "assistant", content: result.output })
 
@@ -382,7 +388,15 @@ const runAgenticLoop = async (
     }
 
     messages.push({ role: "user", content: toolResultContents })
-    return runAgenticLoop(agent, taskRunId, messages, agentTools, bedrockTools, delegationCtx, accumulatedTexts)
+  }
+
+  if (step >= config.maxAgentSteps) {
+    await emitEvent(
+      agent.id,
+      taskRunId,
+      "error",
+      `Loop step cap reached (${config.maxAgentSteps}). Forcing termination.`
+    )
   }
 
   const fullResponse = accumulatedTexts.join("\n\n")
