@@ -72,14 +72,19 @@ export const converse = async ({
   inferenceConfig,
 }: ConverseInput): Promise<ConverseResult> => {
   const modelId = resolveModelId(inferenceConfig?.model)
-  const maxTokens = inferenceConfig?.maxTokens ?? DEFAULT_MAX_TOKENS
+  const baseMaxTokens = inferenceConfig?.maxTokens ?? DEFAULT_MAX_TOKENS
+  const thinkingEnabled = inferenceConfig?.thinking?.enabled === true
+  const thinkingBudget = thinkingEnabled ? inferenceConfig!.thinking!.budgetTokens : 0
+  const maxTokens = thinkingEnabled
+    ? Math.max(baseMaxTokens, thinkingBudget + 1024)
+    : baseMaxTokens
   const temperature = inferenceConfig?.temperature
 
-  const additionalModelRequestFields = inferenceConfig?.thinking?.enabled
+  const additionalModelRequestFields = thinkingEnabled
     ? {
         thinking: {
           type: "enabled",
-          budget_tokens: inferenceConfig.thinking.budgetTokens,
+          budget_tokens: thinkingBudget,
         },
       }
     : undefined
