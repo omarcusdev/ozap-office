@@ -478,29 +478,85 @@ export const executeAgentForMeeting = async (
   return output?.result ?? "No response"
 }
 
-export const resumeAfterApproval = async (taskRunId: string, action: "approve" | "reject") => {
-  const [run] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRunId))
-  if (!run) return
+export const resumeAfterApproval = async (
+  approvalId: string,
+  action: "approve" | "reject"
+) => {
+  const [approval] = await db.select().from(approvals).where(eq(approvals.id, approvalId))
+  if (!approval) return
 
-  const savedMessages = run.input as Message[] | null
+  const savedMessages = approval.suspendedMessages as Message[] | null
   if (!savedMessages) return
 
-  const [agent] = await db.select().from(agents).where(eq(agents.id, run.agentId))
+  const [agent] = await db.select().from(agents).where(eq(agents.id, approval.agentId))
   if (!agent) return
 
-  const approvalResult = action === "approve" ? "Approved by user." : "Rejected by user."
-  savedMessages.push({ role: "user", content: [{ text: approvalResult }] })
+  const lastAssistant = savedMessages[savedMessages.length - 1]
+  const lastAssistantToolUses =
+    (lastAssistant?.content as ContentBlock[] | undefined)
+      ?.filter((b) => b.toolUse !== undefined)
+      .map((b) => b.toolUse!) ?? []
+
+  const approvedToolUse = lastAssistantToolUses.find(
+    (t) => t.name === approval.toolName
+  )
+
+  let resumeContent: string
+  let isError = false
+
+  if (action === "approve") {
+    const toolResult = await executeTool(
+      agent.id,
+      approval.toolName,
+      approval.toolInput as Record<string, unknown>,
+      agent.tools as ToolDefinition[]
+    )
+    resumeContent = toolResult.content
+    isError = toolResult.isError ?? false
+  } else {
+    resumeContent = `Rejected by user. Do not execute ${approval.toolName}.`
+  }
+
+  const toolResultBlocks: ContentBlock[] = lastAssistantToolUses.map((tu) => {
+    if (tu.toolUseId === approvedToolUse?.toolUseId) {
+      return {
+        toolResult: {
+          toolUseId: tu.toolUseId!,
+          content: [{ text: resumeContent }],
+          status: isError ? "error" : "success",
+        },
+      }
+    }
+    return {
+      toolResult: {
+        toolUseId: tu.toolUseId!,
+        content: [
+          {
+            text: "Operation cancelled by suspension. Re-issue in a separate turn if still needed.",
+          },
+        ],
+        status: "success",
+      },
+    }
+  })
+
+  savedMessages.push({ role: "user", content: toolResultBlocks })
 
   await db
     .update(taskRuns)
     .set({ status: "running" })
-    .where(eq(taskRuns.id, taskRunId))
+    .where(eq(taskRuns.id, approval.taskRunId))
+  await updateAgentStatus(approval.agentId, "working")
 
   const agentTools = agent.tools as ToolDefinition[]
   const bedrockTools = buildBedrockTools(agentTools)
-
-  await updateAgentStatus(run.agentId, "working")
-  await runAgenticLoop(agent, taskRunId, savedMessages, agentTools, bedrockTools)
-  await updateAgentStatus(run.agentId, "idle")
+  await runAgenticLoop(
+    { id: agent.id, systemPrompt: agent.systemPrompt },
+    approval.taskRunId,
+    savedMessages,
+    agentTools,
+    bedrockTools
+  )
+  await updateAgentStatus(approval.agentId, "idle")
 }
 
