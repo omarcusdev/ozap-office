@@ -309,17 +309,21 @@ export const executeAgent = async (
       return true
     })
 
-  if (!failed && inputContext && trigger !== "cron") {
-    const [completedRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
-    const output = completedRun?.output as { result?: string } | null
+  const [postRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
+  const isSuspended = postRun?.status === "waiting_approval"
+
+  if (!failed && !isSuspended && inputContext && trigger !== "cron") {
+    const output = postRun?.output as { result?: string } | null
     if (output?.result) {
       const sessionId = await getOrCreateSession(agentId)
       await saveConversationTurn(agentId, sessionId, inputContext, output.result)
     }
   }
 
-  const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
-  await updateAgentStatus(agentId, finalStatus)
+  if (!isSuspended) {
+    const finalStatus = failed ? "error" : trigger === "cron" ? "has_report" : "idle"
+    await updateAgentStatus(agentId, finalStatus)
+  }
   return taskRun
 }
 
