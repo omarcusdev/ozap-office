@@ -1,5 +1,5 @@
 import { callMcpTool } from "../integrations/meta-ads-mcp-client.js"
-import { classifyOperation, validateBudgetLimit } from "./ads-gateway.js"
+import { validateBudgetLimit } from "../runtime/tool-gateway.js"
 import { config } from "../config.js"
 
 type ToolResult = { content: string; isError?: boolean }
@@ -17,11 +17,6 @@ const extractMcpText = (result: McpToolResult): ToolResult => {
 
   return { content: text, isError: result.isError }
 }
-
-const guardedResponse = (reason: string): ToolResult => ({
-  content: `⚠️ APPROVAL REQUIRED: This operation requires human approval. Reason: ${reason}. Please inform the user.`,
-  isError: true,
-})
 
 const datePresetLabel: Record<string, string> = {
   today: "Hoje",
@@ -211,9 +206,15 @@ const createAd = async (input: Record<string, unknown>): Promise<ToolResult> => 
   return extractMcpText(adResult)
 }
 
-const activateCampaign = async (_input: Record<string, unknown>): Promise<ToolResult> => {
-  const classification = classifyOperation("activateCampaign", _input)
-  return guardedResponse(classification.reason ?? "Campaign activation requires human approval")
+const activateCampaign = async (input: Record<string, unknown>): Promise<ToolResult> => {
+  const campaignId = input.campaignId as string
+  if (!campaignId) return { content: "campaignId is required", isError: true }
+
+  const result = await callMcpTool("update_campaign", {
+    campaign_id: campaignId,
+    status: "ACTIVE",
+  })
+  return extractMcpText(result)
 }
 
 const pauseCampaign = async (input: Record<string, unknown>): Promise<ToolResult> => {
@@ -233,15 +234,9 @@ const pauseCampaign = async (input: Record<string, unknown>): Promise<ToolResult
 const updateBudget = async (input: Record<string, unknown>): Promise<ToolResult> => {
   const campaignId = input.campaignId as string
   const newDailyBudget = input.newDailyBudget as number
-  const currentDailyBudget = input.currentDailyBudget as number | undefined
 
   if (!campaignId || newDailyBudget === undefined) {
     return { content: "campaignId and newDailyBudget are required", isError: true }
-  }
-
-  const classification = classifyOperation("updateBudget", input)
-  if (classification.level === "guarded") {
-    return guardedResponse(classification.reason ?? "Budget increase requires human approval")
   }
 
   const budgetCheck = validateBudgetLimit(newDailyBudget)
