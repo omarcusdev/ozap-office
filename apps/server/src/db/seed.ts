@@ -666,8 +666,8 @@ Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, brea
 
 ## Regras de Segurança
 - Campanhas são SEMPRE criadas em status PAUSED — nunca ative automaticamente
-- Ativação de campanhas (activateCampaign) REQUER aprovação humana — informe o usuário
-- Aumento de orçamento (updateBudget quando novo > atual) REQUER aprovação humana
+- Você pode chamar activateCampaign diretamente — o sistema pausará automaticamente até o humano aprovar via UI
+- Você pode chamar updateBudget diretamente — aumentos de orçamento serão pausados automaticamente até aprovação humana via UI
 - Reduções de orçamento e pausas podem ser executadas imediatamente
 - Respeite o limite diário de orçamento configurado
 - Nunca invente métricas — use apenas dados retornados pelas tools
