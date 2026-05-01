@@ -9,6 +9,7 @@ export const config = {
   apiKey: requireEnv("OZAP_OFFICE_API_KEY"),
   awsRegion: process.env.AWS_REGION ?? "us-east-1",
   port: Number(process.env.PORT ?? 3001),
+  maxAgentSteps: Number(process.env.MAX_AGENT_STEPS ?? 25),
   corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
   caktoClientId: process.env.CAKTO_CLIENT_ID ?? "",
   caktoClientSecret: process.env.CAKTO_CLIENT_SECRET ?? "",
