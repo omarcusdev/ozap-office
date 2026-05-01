@@ -57,6 +57,13 @@
       "when": 1777664906940,
       "tag": "0007_tranquil_the_call",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777671299983,
+      "tag": "0008_skinny_whirlwind",
+      "breakpoints": true
     }
   ]
 }

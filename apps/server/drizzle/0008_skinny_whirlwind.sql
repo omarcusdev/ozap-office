@@ -1,0 +1,1 @@
+ALTER TABLE "agents" ADD COLUMN "inference_config" jsonb;

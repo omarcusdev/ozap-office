@@ -13,6 +13,7 @@ export const agents = pgTable("agents", {
   positionX: integer("position_x").notNull(),
   positionY: integer("position_y").notNull(),
   status: text("status").notNull().default("idle"),
+  inferenceConfig: jsonb("inference_config"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 })
