@@ -1,4 +1,13 @@
-import type { AgentConfig, AgentEvent, Approval, ConversationMessage, Meeting, MeetingMessage, TaskRun } from "@ozap-office/shared"
+import type {
+  AgentConfig,
+  AgentEvent,
+  Approval,
+  ConversationMessage,
+  InferenceConfig,
+  Meeting,
+  MeetingMessage,
+  TaskRun,
+} from "@ozap-office/shared"
 
 type ConversationSession = {
   id: string
@@ -31,6 +40,11 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
 export const api = {
   getAgents: () => request<AgentConfig[]>("/api/agents"),
   getAgent: (id: string) => request<AgentConfig>(`/api/agents/${id}`),
+  updateAgentConfig: (id: string, inferenceConfig: InferenceConfig | null) =>
+    request<AgentConfig>(`/api/agents/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ inferenceConfig }),
+    }),
   getAgentEvents: (id: string, after?: string) =>
     request<AgentEvent[]>(`/api/agents/${id}/events${after ? `?after=${after}` : ""}`),
   triggerAgent: (id: string, message?: string) =>
