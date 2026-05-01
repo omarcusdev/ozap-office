@@ -1,5 +1,12 @@
 export type AgentStatus = "idle" | "working" | "thinking" | "waiting" | "waiting_approval" | "meeting" | "error" | "has_report"
 
+export type InferenceConfig = {
+  thinking?: { enabled: boolean; budgetTokens: number }
+  model?: "claude-sonnet-4-6" | "claude-haiku-4-5" | "claude-opus-4-7"
+  maxTokens?: number
+  temperature?: number
+}
+
 export type AgentConfig = {
   id: string
   name: string
@@ -13,6 +20,7 @@ export type AgentConfig = {
   status: AgentStatus
   createdAt: Date
   updatedAt: Date
+  inferenceConfig: InferenceConfig | null
 }
 
 export type ToolDefinition = {
