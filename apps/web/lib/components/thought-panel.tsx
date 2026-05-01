@@ -10,6 +10,7 @@ import { useSessionsQuery } from "@/lib/queries/session-queries"
 import { MarkdownRenderer } from "./markdown-renderer"
 import { SessionTabBar } from "./session-tab-bar"
 import { DelegationThread, groupDelegationEvents } from "./delegation-thread"
+import { AgentConfigPanel } from "./agent-config-panel"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
@@ -168,7 +169,7 @@ export const ThoughtPanel = () => {
   const setTaskRunInfo = useEventStore((s) => s.setTaskRunInfo)
   const taskRunInfo = useEventStore((s) => s.taskRunInfo)
 
-  useAgentsQuery()
+  const agentsQuery = useAgentsQuery()
   useConversationQuery(selectedAgentId, activeSessionId)
   useSessionsQuery(selectedAgentId)
 
@@ -182,6 +183,7 @@ export const ThoughtPanel = () => {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null)
   const [showNewActivity, setShowNewActivity] = useState(false)
   const [displayedAgentId, setDisplayedAgentId] = useState<string | null>(null)
+  const [configOpen, setConfigOpen] = useState(false)
   const previousContentLengthRef = useRef(0)
 
   const isOpen = !!selectedAgentId
@@ -223,6 +225,7 @@ export const ThoughtPanel = () => {
   }, [activeSessionId, clearEvents])
 
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
+  const selectedAgentConfig = agentsQuery.data?.find((a) => a.id === (selectedAgentId ?? displayedAgentId)) ?? null
 
   const checkNearBottom = useCallback(() => {
     const el = scrollRef.current
@@ -311,6 +314,7 @@ export const ThoughtPanel = () => {
   const statusColor = selectedAgent ? STATUS_COLORS[selectedAgent.status] ?? "#5a5650" : "#5a5650"
 
   return (
+    <>
     <div className={`overflow-hidden transition-[width] duration-300 ease-out ${isOpen ? "w-[400px]" : "w-0"}`}>
       <div className={`w-[400px] min-w-[400px] bg-surface border-l border-edge flex flex-col h-full transition-all duration-300 ease-out ${isOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"}`}>
         {selectedAgent && (
@@ -341,6 +345,17 @@ export const ThoughtPanel = () => {
                       </svg>
                     </button>
                   )}
+                  <button
+                    onClick={() => setConfigOpen(true)}
+                    className="text-mute hover:text-sand transition-colors p-1"
+                    title="Configure inference"
+                    aria-label="Configure agent"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.2" />
+                      <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.76 2.76l1.42 1.42M9.82 9.82l1.42 1.42M2.76 11.24l1.42-1.42M9.82 4.18l1.42-1.42" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    </svg>
+                  </button>
                   <button
                     onClick={() => selectAgent(null)}
                     className="text-mute hover:text-sand transition-colors p-1 -mr-1 -mt-0.5"
@@ -425,5 +440,11 @@ export const ThoughtPanel = () => {
         )}
       </div>
     </div>
+    <AgentConfigPanel
+      agent={selectedAgentConfig}
+      open={configOpen}
+      onClose={() => setConfigOpen(false)}
+    />
+    </>
   )
 }
