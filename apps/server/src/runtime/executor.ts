@@ -1,11 +1,12 @@
 import type { ContentBlock, Message } from "@aws-sdk/client-bedrock-runtime"
 import { db } from "../db/client.js"
-import { agents, taskRuns, events, agentMemories, conversationMessages, conversationSessions } from "../db/schema.js"
+import { agents, taskRuns, events, agentMemories, conversationMessages, conversationSessions, approvals } from "../db/schema.js"
 import { eq, and, desc, sql } from "drizzle-orm"
 import { converse } from "./bedrock.js"
 import { executeTool } from "./tool-executor.js"
 import { config } from "../config.js"
 import type { DelegationContext } from "../tools/leader.js"
+import { classifyToolCall } from "./tool-gateway.js"
 import { eventBus } from "../events/event-bus.js"
 import type { AgentEventType, ToolDefinition } from "@ozap-office/shared"
 
@@ -356,6 +357,47 @@ const runAgenticLoop = async (
 
     await updateAgentStatus(agent.id, "working")
     messages.push({ role: "assistant", content: result.output })
+
+    const guardedToolUse = toolUseBlocks.find((block) => {
+      const classification = classifyToolCall(
+        block.toolUse.name!,
+        block.toolUse.input as Record<string, unknown>
+      )
+      return classification.level === "guarded"
+    })
+
+    if (guardedToolUse) {
+      const { toolUse: guardedTool } = guardedToolUse
+      const classification = classifyToolCall(
+        guardedTool.name!,
+        guardedTool.input as Record<string, unknown>
+      )
+
+      await db.insert(approvals).values({
+        agentId: agent.id,
+        taskRunId,
+        toolName: guardedTool.name!,
+        toolInput: guardedTool.input,
+        status: "pending",
+        suspendedMessages: messages,
+      })
+
+      await db
+        .update(taskRuns)
+        .set({ status: "waiting_approval" })
+        .where(eq(taskRuns.id, taskRunId))
+
+      await emitEvent(
+        agent.id,
+        taskRunId,
+        "approval_needed",
+        classification.reason ?? "Approval required",
+        { toolName: guardedTool.name, toolInput: guardedTool.input }
+      )
+
+      await updateAgentStatus(agent.id, "waiting_approval")
+      return
+    }
 
     const toolResultContents: ContentBlock[] = []
     for (const block of toolUseBlocks) {
