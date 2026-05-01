@@ -4,8 +4,33 @@ import { agents, events, taskRuns, conversationMessages, conversationSessions } 
 import { eq, gt, and, desc } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { eventBus } from "../events/event-bus.js"
+import { validateInferenceConfig } from "../runtime/validate-inference-config.js"
+import type { InferenceConfig } from "@ozap-office/shared"
 
 export const registerAgentRoutes = (server: FastifyInstance) => {
+  server.patch<{
+    Params: { id: string }
+    Body: { inferenceConfig: InferenceConfig | null }
+  }>("/api/agents/:id", async (request, reply) => {
+    const { id } = request.params
+    const { inferenceConfig } = request.body
+
+    const validation = validateInferenceConfig(inferenceConfig)
+    if (!validation.valid) {
+      return reply.code(400).send({ error: validation.message })
+    }
+
+    const [updated] = await db
+      .update(agents)
+      .set({ inferenceConfig, updatedAt: new Date() })
+      .where(eq(agents.id, id))
+      .returning()
+
+    if (!updated) return reply.code(404).send({ error: "Agent not found" })
+
+    return updated
+  })
+
   server.get("/api/agents", async () => {
     return db.select().from(agents)
   })
