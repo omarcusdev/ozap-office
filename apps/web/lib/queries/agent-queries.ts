@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { InferenceConfig } from "@ozap-office/shared"
 import { api } from "@/lib/api-client"
 import { useAgentStore } from "@/lib/stores/agent-store"
 import { useEffect } from "react"
@@ -42,3 +43,17 @@ export const useTaskRunEventsQuery = (agentId: string | null, taskRunId: string 
     queryFn: () => api.getTaskRunEvents(agentId!, taskRunId!),
     enabled: !!agentId && !!taskRunId,
   })
+
+export const useUpdateAgentConfig = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      inferenceConfig,
+    }: {
+      id: string
+      inferenceConfig: InferenceConfig | null
+    }) => api.updateAgentConfig(id, inferenceConfig),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
+  })
+}
