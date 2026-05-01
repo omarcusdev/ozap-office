@@ -1,6 +1,6 @@
 "use client"
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query"
 import { useRef, useEffect, type ReactNode } from "react"
 import { createWsClient } from "@/lib/ws-client"
 import { useAgentStore } from "@/lib/stores/agent-store"
@@ -24,6 +24,7 @@ const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const addEvent = useEventStore((s) => s.addEvent)
   const addMeetingMessage = useMeetingStore((s) => s.addMessage)
   const setConnected = useWsStore((s) => s.setConnected)
+  const queryClient = useQueryClient()
   const selectedAgentIdRef = useRef(selectedAgentId)
   selectedAgentIdRef.current = selectedAgentId
 
@@ -34,6 +35,12 @@ const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       } else if (message.type === "agent_event") {
         if (message.payload.agentId === selectedAgentIdRef.current) {
           addEvent(message.payload)
+        }
+        if (
+          message.payload.type === "approval_needed" ||
+          message.payload.type === "approval_decided"
+        ) {
+          queryClient.invalidateQueries({ queryKey: ["approvals"] })
         }
       } else if (message.type === "meeting_message") {
         addMeetingMessage(message.payload)
@@ -46,7 +53,7 @@ const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       client.disconnect()
       setConnected(false)
     }
-  }, [updateStatus, addEvent, addMeetingMessage, setConnected])
+  }, [updateStatus, addEvent, addMeetingMessage, setConnected, queryClient])
 
   return <>{children}</>
 }
