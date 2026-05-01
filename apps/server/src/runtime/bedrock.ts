@@ -16,6 +16,7 @@ const RETRYABLE_ERRORS = [
   "ThrottlingException",
   "ServiceUnavailableException",
   "ModelStreamErrorException",
+  "ModelTimeoutException",
   "InternalServerException",
 ]
 const MAX_ATTEMPTS = 3
