@@ -34,6 +34,11 @@ export const registerTrackingRoutes = (server: FastifyInstance) => {
       utm_campaign?: string
       utm_content?: string
       utm_term?: string
+      fbclid?: string
+      gclid?: string
+      ttclid?: string
+      msclkid?: string
+      first_touch?: Record<string, unknown>
       screen_width?: number
       session_id?: string
     }
@@ -55,6 +60,11 @@ export const registerTrackingRoutes = (server: FastifyInstance) => {
       utmCampaign: body.utm_campaign || null,
       utmContent: body.utm_content || null,
       utmTerm: body.utm_term || null,
+      fbclid: body.fbclid || null,
+      gclid: body.gclid || null,
+      ttclid: body.ttclid || null,
+      msclkid: body.msclkid || null,
+      firstTouch: body.first_touch ?? null,
       screenWidth: body.screen_width || null,
       sessionId: body.session_id || null,
     })
