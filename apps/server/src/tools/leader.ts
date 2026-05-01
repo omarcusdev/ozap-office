@@ -13,6 +13,13 @@ export type DelegationContext = {
   leaderTaskRunId: string
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const invalidAgentIdError = (received: string): ToolResult => ({
+  content: `agentId must be a UUID, got "${received}". Use the agent IDs from the team roster injected in your system prompt — names like "Promo" or "Leader" don't work, only UUIDs.`,
+  isError: true,
+})
+
 const emitDelegationEvent = async (
   ctx: DelegationContext,
   type: AgentEventType,
@@ -37,6 +44,8 @@ const emitDelegationEvent = async (
 const askAgent = async (input: Record<string, unknown>, ctx?: DelegationContext): Promise<ToolResult> => {
   const agentId = input.agentId as string
   const question = input.question as string
+
+  if (!UUID_RE.test(agentId)) return invalidAgentIdError(agentId)
 
   const [agent] = await db.select().from(agents).where(eq(agents.id, agentId))
   if (!agent) return { content: `Agent ${agentId} not found`, isError: true }
@@ -75,6 +84,8 @@ const getAgentHistory = async (input: Record<string, unknown>): Promise<ToolResu
   const agentId = input.agentId as string
   const limit = (input.limit as number) ?? 5
 
+  if (!UUID_RE.test(agentId)) return invalidAgentIdError(agentId)
+
   const recentRuns = await db
     .select()
     .from(taskRuns)
@@ -100,6 +111,8 @@ const getAgentHistory = async (input: Record<string, unknown>): Promise<ToolResu
 const delegateTask = async (input: Record<string, unknown>, ctx?: DelegationContext): Promise<ToolResult> => {
   const agentId = input.agentId as string
   const task = input.task as string
+
+  if (!UUID_RE.test(agentId)) return invalidAgentIdError(agentId)
 
   const [agent] = await db.select().from(agents).where(eq(agents.id, agentId))
   if (!agent) return { content: `Agent ${agentId} not found`, isError: true }

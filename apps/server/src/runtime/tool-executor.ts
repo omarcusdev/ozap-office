@@ -59,35 +59,35 @@ export const executeTool = async (
 ): Promise<ToolResult> => {
   try {
     if (LEADER_TOOLS.includes(toolName)) {
-      return executeLeaderTool(toolName, toolInput, delegationCtx)
+      return await executeLeaderTool(toolName, toolInput, delegationCtx)
     }
 
     if (FINANCE_TOOLS.includes(toolName)) {
-      return executeFinanceTool(toolName, toolInput)
+      return await executeFinanceTool(toolName, toolInput)
     }
 
     if (MEMORY_TOOLS.includes(toolName)) {
-      return executeMemoryTool(agentId, toolName, toolInput)
+      return await executeMemoryTool(agentId, toolName, toolInput)
     }
 
     if (ADS_TOOLS.includes(toolName)) {
-      return executeAdsTool(toolName, toolInput)
+      return await executeAdsTool(toolName, toolInput)
     }
 
     if (TRAFFIC_TOOLS.includes(toolName)) {
-      return executeTrafficTool(toolName, toolInput)
+      return await executeTrafficTool(toolName, toolInput)
     }
 
     if (ANALYTICS_TOOLS.includes(toolName)) {
-      return executeAnalyticsTool(toolName, toolInput)
+      return await executeAnalyticsTool(toolName, toolInput)
     }
 
     if (PROMO_TOOLS.includes(toolName)) {
-      return executePromoTool(toolName, toolInput, agentId)
+      return await executePromoTool(toolName, toolInput, agentId)
     }
 
     if (TWITTER_TOOLS.includes(toolName)) {
-      return executeTwitterTool(agentId, toolName, toolInput)
+      return await executeTwitterTool(agentId, toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }
