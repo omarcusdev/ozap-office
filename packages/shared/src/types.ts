@@ -1,4 +1,4 @@
-export type AgentStatus = "idle" | "working" | "thinking" | "waiting" | "meeting" | "error" | "has_report"
+export type AgentStatus = "idle" | "working" | "thinking" | "waiting" | "waiting_approval" | "meeting" | "error" | "has_report"
 
 export type AgentConfig = {
   id: string
@@ -43,6 +43,7 @@ export type AgentEventType =
   | "tool_result"
   | "message"
   | "approval_needed"
+  | "approval_decided"
   | "completed"
   | "error"
   | "delegation_start"
@@ -64,6 +65,9 @@ export type Approval = {
   id: string
   taskRunId: string
   agentId: string
+  toolName: string
+  toolInput: unknown
+  suspendedMessages: unknown
   payload: unknown
   status: ApprovalStatus
   decidedAt: Date | null

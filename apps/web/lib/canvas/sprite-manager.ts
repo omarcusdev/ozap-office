@@ -12,6 +12,7 @@ const STATUS_COLORS: Record<AgentStatus, string> = {
   working: "#50fa7b",
   thinking: "#f1fa8c",
   waiting: "#ffb86c",
+  waiting_approval: "#ffb86c",
   meeting: "#bd93f9",
   error: "#ff5555",
   has_report: "#ffb86c",
