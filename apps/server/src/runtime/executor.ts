@@ -249,6 +249,15 @@ const extractTextContent = (content: ContentBlock[]): string =>
     .map((block) => block.text)
     .join("\n")
 
+const activeRuns = new Map<string, AbortController>()
+
+export const cancelTaskRun = (taskRunId: string): boolean => {
+  const controller = activeRuns.get(taskRunId)
+  if (!controller) return false
+  controller.abort()
+  return true
+}
+
 export const executeAgent = async (
   agentId: string,
   trigger: string,
@@ -301,16 +310,27 @@ export const executeAgent = async (
     ? { leaderAgentId: agentId, leaderTaskRunId: taskRun.id } as DelegationContext
     : undefined
 
-  const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools, delegationCtx)
+  const controller = new AbortController()
+  activeRuns.set(taskRun.id, controller)
+
+  const failed = await runAgenticLoop(agentWithPrompt, taskRun.id, messages, agentTools, bedrockTools, delegationCtx, controller.signal)
     .then(() => false)
     .catch(async (error) => {
       const errorMessage = error instanceof Error ? error.message : String(error)
+      const aborted = controller.signal.aborted
       await db
         .update(taskRuns)
-        .set({ status: "failed", output: { error: errorMessage }, completedAt: new Date() })
+        .set({
+          status: aborted ? "cancelled" : "failed",
+          output: { error: aborted ? "Cancelled by user" : errorMessage },
+          completedAt: new Date(),
+        })
         .where(eq(taskRuns.id, taskRun.id))
-      await emitEvent(agentId, taskRun.id, "error", errorMessage)
+      await emitEvent(agentId, taskRun.id, "error", aborted ? "Cancelled by user" : errorMessage)
       return true
+    })
+    .finally(() => {
+      activeRuns.delete(taskRun.id)
     })
 
   const [postRun] = await db.select().from(taskRuns).where(eq(taskRuns.id, taskRun.id))
@@ -337,12 +357,14 @@ const runAgenticLoop = async (
   messages: Message[],
   agentTools: ToolDefinition[],
   bedrockTools: any[],
-  delegationCtx?: DelegationContext
+  delegationCtx?: DelegationContext,
+  signal?: AbortSignal
 ): Promise<void> => {
   const accumulatedTexts: string[] = []
   let step = 0
 
   while (step < config.maxAgentSteps) {
+    if (signal?.aborted) throw new Error("aborted")
     step++
     await updateAgentStatus(agent.id, "thinking")
     await emitEvent(agent.id, taskRunId, "thinking", "Processing...", { step })
@@ -352,6 +374,7 @@ const runAgenticLoop = async (
       systemPrompt: agent.systemPrompt,
       tools: bedrockTools,
       inferenceConfig: agent.inferenceConfig,
+      signal,
     })
 
     console.log(

@@ -34,6 +34,7 @@ type ConverseInput = {
   systemPrompt: string
   tools: Tool[]
   inferenceConfig?: InferenceConfig | null
+  signal?: AbortSignal
 }
 
 type ConverseResult = {
@@ -70,6 +71,7 @@ export const converse = async ({
   systemPrompt,
   tools,
   inferenceConfig,
+  signal,
 }: ConverseInput): Promise<ConverseResult> => {
   const modelId = resolveModelId(inferenceConfig?.model)
   const baseMaxTokens = inferenceConfig?.maxTokens ?? DEFAULT_MAX_TOKENS
@@ -109,7 +111,7 @@ export const converse = async ({
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
-      const response = await client.send(command)
+      const response = await client.send(command, { abortSignal: signal })
       return {
         output: response.output?.message?.content ?? [],
         stopReason: response.stopReason ?? "end_turn",
