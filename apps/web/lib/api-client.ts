@@ -48,7 +48,7 @@ export const api = {
   getAgentEvents: (id: string, after?: string) =>
     request<AgentEvent[]>(`/api/agents/${id}/events${after ? `?after=${after}` : ""}`),
   cancelTaskRun: (taskRunId: string) =>
-    request<{ status: string }>(`/api/task-runs/${taskRunId}/cancel`, { method: "POST" }),
+    request<{ status: string }>(`/api/task-runs/${taskRunId}/cancel`, { method: "POST", body: "{}" }),
   triggerAgent: (id: string, message?: string) =>
     request<{ taskRunId: string }>(`/api/agents/${id}/run`, { method: "POST", body: JSON.stringify({ message }) }),
   getApprovals: () => request<Approval[]>("/api/approvals"),
