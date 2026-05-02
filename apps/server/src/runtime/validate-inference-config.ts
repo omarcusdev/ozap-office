@@ -44,5 +44,16 @@ export const validateInferenceConfig = (
     }
   }
 
+  if (
+    config.thinking?.enabled &&
+    config.maxTokens !== undefined &&
+    config.maxTokens <= config.thinking.budgetTokens
+  ) {
+    return {
+      valid: false,
+      message: `maxTokens (${config.maxTokens}) must be greater than thinking.budgetTokens (${config.thinking.budgetTokens}). Bump maxTokens or lower the thinking budget.`,
+    }
+  }
+
   return { valid: true }
 }
