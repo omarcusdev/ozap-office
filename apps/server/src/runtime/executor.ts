@@ -354,6 +354,13 @@ const runAgenticLoop = async (
       inferenceConfig: agent.inferenceConfig,
     })
 
+    console.log(
+      `[bedrock] agent=${agent.id} step=${step} ` +
+        `in=${result.usage.inputTokens} out=${result.usage.outputTokens} ` +
+        `cacheRead=${result.usage.cacheReadInputTokens} cacheWrite=${result.usage.cacheWriteInputTokens} ` +
+        `stop=${result.stopReason}`
+    )
+
     const textContent = extractTextContent(result.output)
     const toolUseBlocks = extractToolUseBlocks(result.output)
 
