@@ -166,6 +166,7 @@ export const ThoughtPanel = () => {
 
   const setEvents = useEventStore((s) => s.setEvents)
   const setActiveTaskRunId = useEventStore((s) => s.setActiveTaskRunId)
+  const activeTaskRunId = useEventStore((s) => s.activeTaskRunId)
   const setTaskRunInfo = useEventStore((s) => s.setTaskRunInfo)
   const taskRunInfo = useEventStore((s) => s.taskRunInfo)
 
@@ -342,6 +343,20 @@ export const ThoughtPanel = () => {
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M2.5 4h9M5 4V3a1 1 0 011-1h2a1 1 0 011 1v1M8.5 6.5v4M5.5 6.5v4M3.5 4l.5 7a1 1 0 001 1h4a1 1 0 001-1l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  )}
+                  {isAgentActive && activeTaskRunId && (
+                    <button
+                      onClick={() => {
+                        api.cancelTaskRun(activeTaskRunId).catch(console.error)
+                      }}
+                      className="text-coral hover:text-coral/80 transition-colors p-1"
+                      title="Cancel current run"
+                      aria-label="Cancel run"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.4" />
                       </svg>
                     </button>
                   )}
