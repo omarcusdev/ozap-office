@@ -7,6 +7,7 @@ import { executeAnalyticsTool } from "../tools/analytics.js"
 import { executeTrafficTool } from "../tools/traffic.js"
 import { executePromoTool } from "../tools/promo.js"
 import { executeTwitterTool } from "../tools/twitter.js"
+import { executeAttributionTool } from "../tools/attribution.js"
 
 type ToolResult = {
   content: string
@@ -39,6 +40,7 @@ const TRAFFIC_TOOLS = [
 ]
 const PROMO_TOOLS = ["getActivePromo", "updatePromoConfig", "startPriceTest", "getPriceTestStatus", "collectAndAdvancePriceTest"]
 const TWITTER_TOOLS = ["postTweet", "getRecentTweets", "getMentions"]
+const ATTRIBUTION_TOOLS = ["getConversionAttribution", "getCampaignFunnel"]
 const ANALYTICS_TOOLS = [
   "getUsageSummary",
   "getTopUsers",
@@ -88,6 +90,10 @@ export const executeTool = async (
 
     if (TWITTER_TOOLS.includes(toolName)) {
       return await executeTwitterTool(agentId, toolName, toolInput)
+    }
+
+    if (ATTRIBUTION_TOOLS.includes(toolName)) {
+      return await executeAttributionTool(toolName, toolInput)
     }
 
     return { content: `Unknown tool: ${toolName}`, isError: true }

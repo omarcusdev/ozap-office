@@ -462,6 +462,34 @@ const trafficTools = [
   },
 ]
 
+const attributionTools = [
+  {
+    name: "getConversionAttribution",
+    description: "Receita de pedidos pagos da Cakto agrupada por utm_campaign + utm_source no período. Retorna orders, revenue total, ticket médio por bucket. Use pra responder 'qual campanha gerou mais vendas/receita'.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD (paid_at)" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD (paid_at)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "getCampaignFunnel",
+    description: "Funil completo por campanha: page_views (visits) + Cakto orders (orders/revenue) + métricas derivadas (CVR, revenuePerVisit). Use pra avaliar ROAS e eficácia de cada campanha. Junta dados das LPs com pedidos pagos pelo utm_campaign.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Data inicial no formato YYYY-MM-DD" },
+        endDate: { type: "string", description: "Data final no formato YYYY-MM-DD" },
+        site: { type: "string", description: "Filtrar visits por site: zapgpt, ozaponline (opcional)" },
+      },
+      required: ["startDate", "endDate"],
+    },
+  },
+]
+
 const promoTools = [
   {
     name: "getActivePromo",
@@ -683,7 +711,7 @@ Inclua: receita total, quantidade de vendas, ticket médio, top 3 produtos, brea
 ## Valores em BRL
 - Sempre apresente valores monetários em BRL (R$)
 - Orçamentos são informados em reais (ex: dailyBudget=50 significa R$50/dia)`,
-    tools: [...adsTools, ...memoryTools],
+    tools: [...adsTools, ...attributionTools, ...memoryTools],
     schedule: "0 9 * * 1",
     cronPrompt: `Gere o relatório semanal de performance de anúncios Meta Ads.
 Analise todas as campanhas ativas e pausadas dos últimos 7 dias.
@@ -728,7 +756,7 @@ Ferramentas: getUsageSummary, getTopUsers, getUserUsageDetail, getDailyUsageTren
 - Valores monetários em BRL (R$)
 - Destaque correlações: ex. pico de tráfego do Instagram coincide com pico de vendas
 - Salve insights na memória para acompanhamento`,
-    tools: [...trafficTools, ...analyticsTools, ...memoryTools],
+    tools: [...trafficTools, ...analyticsTools, ...attributionTools, ...memoryTools],
     schedule: null,
     cronPrompt: null,
     color: "#10b981",

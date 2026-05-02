@@ -46,6 +46,10 @@ type CaktoOrder = {
   utm_campaign: string | null
   utm_term: string | null
   utm_content: string | null
+  fbclid: string | null
+  gclid: string | null
+  ttclid: string | null
+  msclkid: string | null
   sck: string | null
   checkoutUrl: string | null
   commissions: Array<{
