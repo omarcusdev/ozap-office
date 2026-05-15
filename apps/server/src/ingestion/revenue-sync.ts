@@ -86,7 +86,7 @@ const syncCakto = async (): Promise<SyncResult> => {
 const syncAbacatePay = async (): Promise<SyncResult> => {
   try {
     const billings = await fetchAllBillings()
-    const eligible = billings.filter((billing) => billing.status === "PAID" && billing.paidAmount > 0)
+    const eligible = billings.filter((billing) => billing.paidAmount > 0)
     const skippedUpfront = billings.length - eligible.length
     const outcomes = await Promise.all(
       eligible.map((billing) =>
