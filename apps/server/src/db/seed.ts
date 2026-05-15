@@ -2,6 +2,7 @@ import "dotenv/config"
 import { eq } from "drizzle-orm"
 import { db } from "./client.js"
 import { agents, taskRuns, events, approvals, agentMemories, conversationMessages } from "./schema.js"
+import { seedCosts } from "./seed/costs.js"
 
 const leaderTools = [
   {
@@ -1049,6 +1050,7 @@ const seedAgents = async () => {
     console.log(`Removed agent "${agent.name}" and all related data.`)
   }
 
+  await seedCosts()
   console.log("Seed complete.")
   process.exit(0)
 }
