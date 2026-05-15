@@ -233,7 +233,6 @@ Click Finance agent → setActivePanel('finance')
 | Loading | Skeleton: 3 KPI placeholders + 3 row skeletons |
 | Error | "Não foi possível carregar finanças" + Retry button; keeps last cached data |
 | Empty (zero rows) | "Sem dados para Mai/2026" — panel stays open |
-| Stale (>1h since last cron) | Subtle "Atualizado há Xh" badge under header |
 
 ## Open Questions (deferred to phase 2)
 
@@ -243,6 +242,7 @@ Click Finance agent → setActivePanel('finance')
 - `getProfitLoss` Finance agent tool — exposes same `/api/pnl` data to Bedrock Converse loop
 - USD/BRL rate history table (replacing single env var)
 - CRUD UI for ad-hoc cost entry
+- Stale-data badge in panel ("Atualizado há Xh") — needs sync-time tracking
 
 ## MVP Acceptance
 
