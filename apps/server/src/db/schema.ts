@@ -195,3 +195,24 @@ export const priceTestVariants = pgTable(
     index("price_test_variants_test_idx").on(table.testId, table.order),
   ]
 )
+
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    source: text("source").notNull(),
+    category: text("category").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull(),
+    amountBrlCents: integer("amount_brl_cents").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "string" }).notNull(),
+    externalId: text("external_id").notNull(),
+    rawJson: jsonb("raw_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("ledger_entries_kind_date_idx").on(table.kind, table.occurredAt),
+    index("ledger_entries_source_extid_unique").on(table.source, table.externalId),
+  ]
+)
