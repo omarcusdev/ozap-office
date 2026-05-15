@@ -11,6 +11,7 @@ import { MarkdownRenderer } from "./markdown-renderer"
 import { SessionTabBar } from "./session-tab-bar"
 import { DelegationThread, groupDelegationEvents } from "./delegation-thread"
 import { AgentConfigPanel } from "./agent-config-panel"
+import { FinancePanel } from "./finance-panel"
 import { api } from "@/lib/api-client"
 import type { AgentEvent } from "@ozap-office/shared"
 
@@ -226,6 +227,7 @@ export const ThoughtPanel = () => {
   }, [activeSessionId, clearEvents])
 
   const selectedAgent = agents.find((a) => a.id === (selectedAgentId ?? displayedAgentId))
+  const isFinance = selectedAgent?.name === "Finance"
   const selectedAgentConfig = agentsQuery.data?.find((a) => a.id === (selectedAgentId ?? displayedAgentId)) ?? null
 
   const checkNearBottom = useCallback(() => {
@@ -386,6 +388,12 @@ export const ThoughtPanel = () => {
                 <span className="text-[11px] font-mono text-sand tracking-wide">{selectedAgent.status}</span>
               </div>
             </div>
+
+            {isFinance && (
+              <div className="px-4 pt-3">
+                <FinancePanel />
+              </div>
+            )}
 
             <SessionTabBar agentId={selectedAgentId!} />
 

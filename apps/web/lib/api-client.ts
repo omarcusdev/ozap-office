@@ -6,6 +6,7 @@ import type {
   InferenceConfig,
   Meeting,
   MeetingMessage,
+  PnlSummary,
   TaskRun,
 } from "@ozap-office/shared"
 
@@ -79,4 +80,6 @@ export const api = {
     request<ConversationMessage[]>(`/api/agents/${agentId}/sessions/${sessionId}/messages`),
   completeMeeting: (meetingId: string) =>
     request<{ status: string }>(`/api/meetings/${meetingId}/complete`, { method: "POST", body: JSON.stringify({}) }),
+  fetchPnl: (month?: string): Promise<PnlSummary> =>
+    request<PnlSummary>(`/api/pnl${month ? `?month=${month}` : ""}`),
 }

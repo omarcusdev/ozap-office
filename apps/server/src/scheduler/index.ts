@@ -3,6 +3,7 @@ import { db } from "../db/client.js"
 import { agents } from "../db/schema.js"
 import { isNotNull } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
+import { syncRevenue } from "../ingestion/revenue-sync.js"
 
 const MAX_JITTER_MS = 45 * 60 * 1000
 
@@ -38,4 +39,14 @@ export const startScheduler = () => {
   }
 
   setupCronJobs().catch(console.error)
+
+  cron.schedule("0 9 * * *", async () => {
+    console.log("[revenue-sync] cron triggered")
+    try {
+      await syncRevenue()
+    } catch (err) {
+      console.error("[revenue-sync] cron failed:", err)
+    }
+  })
+  console.log("Scheduled daily revenue sync at 09:00 UTC (06:00 BRT)")
 }

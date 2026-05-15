@@ -9,6 +9,7 @@ import { registerTaskRunRoutes } from "./routes/task-runs.js"
 import { registerApprovalRoutes } from "./routes/approvals.js"
 import { registerMeetingRoutes } from "./routes/meetings.js"
 import { registerTrackingRoutes } from "./routes/tracking.js"
+import { registerPnlRoutes } from "./routes/pnl.js"
 import { registerWebSocket } from "./events/websocket.js"
 import { startScheduler } from "./scheduler/index.js"
 import { recoverOrphanedTaskRuns } from "./startup.js"
@@ -28,6 +29,7 @@ const buildServer = async () => {
   registerTaskRunRoutes(server)
   registerApprovalRoutes(server)
   registerMeetingRoutes(server)
+  registerPnlRoutes(server)
   registerWebSocket(server)
 
   return server

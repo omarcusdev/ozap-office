@@ -133,3 +133,20 @@ export type AgentMemory = {
   createdAt: Date
   updatedAt: Date
 }
+
+export type PnlCategoryRow = {
+  category: string
+  source: string
+  amountBrlCents: number
+}
+
+export type PnlSummary = {
+  month: string
+  kpis: {
+    revenueBrlCents: number
+    costBrlCents: number
+    profitBrlCents: number
+  }
+  revenueByCategory: PnlCategoryRow[]
+  costByCategory: PnlCategoryRow[]
+}
