@@ -5,6 +5,7 @@ import { isNotNull } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { syncRevenue } from "../ingestion/revenue-sync.js"
 import { syncOpenAICosts } from "../ingestion/openai-cost-sync.js"
+import { seedCosts } from "../db/seed/costs.js"
 
 const MAX_JITTER_MS = 45 * 60 * 1000
 
@@ -55,6 +56,12 @@ export const startScheduler = () => {
     } catch (err) {
       console.error("[openai-cost-sync] cron failed:", err)
     }
+    console.log("[recurring-costs] cron triggered")
+    try {
+      await seedCosts()
+    } catch (err) {
+      console.error("[recurring-costs] cron failed:", err)
+    }
   })
-  console.log("Scheduled daily revenue + OpenAI cost sync at 09:00 UTC (06:00 BRT)")
+  console.log("Scheduled daily revenue + OpenAI + recurring costs sync at 09:00 UTC (06:00 BRT)")
 }

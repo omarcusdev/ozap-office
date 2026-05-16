@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { usePnl } from "@/lib/queries/pnl-queries"
 import type { PnlCategoryRow } from "@ozap-office/shared"
 
@@ -7,6 +8,25 @@ const formatBrl = (cents: number): string => {
   const reais = cents / 100
   if (reais >= 1000) return `R$${(reais / 1000).toFixed(1)}k`
   return `R$${reais.toFixed(2).replace(".", ",")}`
+}
+
+const currentMonth = (): string => {
+  const now = new Date()
+  const tzOffset = -3 * 60
+  const local = new Date(now.getTime() + (tzOffset - now.getTimezoneOffset()) * 60_000)
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, "0")}`
+}
+
+const shiftMonth = (month: string, delta: number): string => {
+  const [year, monthIdx] = month.split("-").map(Number)
+  const date = new Date(Date.UTC(year, monthIdx - 1 + delta, 1))
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`
+}
+
+const monthLabel = (month: string): string => {
+  const [year, monthIdx] = month.split("-").map(Number)
+  const names = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+  return `${names[monthIdx - 1]}/${String(year).slice(2)}`
 }
 
 const categoryLabel: Record<string, string> = {
@@ -46,10 +66,41 @@ const Skeleton = () => (
   </div>
 )
 
-export const FinancePanel = () => {
-  const { data, isLoading, error, refetch } = usePnl()
+const MonthNav = ({
+  selected,
+  onChange,
+}: {
+  selected: string
+  onChange: (m: string) => void
+}) => {
+  const isCurrent = selected === currentMonth()
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onChange(shiftMonth(selected, -1))}
+        className="px-1.5 py-0.5 text-mute hover:text-sand transition-colors"
+        aria-label="Mês anterior"
+      >
+        ‹
+      </button>
+      <span className="text-mute text-xs min-w-[48px] text-center">{monthLabel(selected)}</span>
+      <button
+        onClick={() => !isCurrent && onChange(shiftMonth(selected, 1))}
+        disabled={isCurrent}
+        className="px-1.5 py-0.5 text-mute hover:text-sand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        aria-label="Mês seguinte"
+      >
+        ›
+      </button>
+    </div>
+  )
+}
 
-  if (isLoading) {
+export const FinancePanel = () => {
+  const [month, setMonth] = useState<string>(currentMonth())
+  const { data, isLoading, error, refetch } = usePnl(month)
+
+  if (isLoading && !data) {
     return (
       <div className="bg-panel border border-edge rounded-lg p-4">
         <Skeleton />
@@ -71,14 +122,14 @@ export const FinancePanel = () => {
     )
   }
 
-  const { kpis, revenueByCategory, costByCategory, month } = data
+  const { kpis, revenueByCategory, costByCategory } = data
   const hasData = revenueByCategory.length > 0 || costByCategory.length > 0
 
   return (
     <div className="bg-panel border border-edge rounded-lg p-4 text-cream text-sm">
       <div className="flex items-baseline justify-between mb-1">
         <h4 className="text-gold font-semibold">P&L</h4>
-        <span className="text-mute text-xs">{month}</span>
+        <MonthNav selected={month} onChange={setMonth} />
       </div>
 
       <div className="grid grid-cols-3 gap-2 my-3">
@@ -97,7 +148,7 @@ export const FinancePanel = () => {
       </div>
 
       {!hasData && (
-        <p className="text-mute text-xs text-center py-3">Sem dados para {month}</p>
+        <p className="text-mute text-xs text-center py-3">Sem dados para {monthLabel(month)}</p>
       )}
 
       {revenueByCategory.length > 0 && (

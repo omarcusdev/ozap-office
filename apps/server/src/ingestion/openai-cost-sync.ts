@@ -7,15 +7,13 @@ import { toBrlCents } from "../pnl/fx.js"
 type SyncResult = { source: string; inserted: number; skipped: number; error?: string }
 type SyncCounts = { inserted: number; skipped: number }
 
-const watermark = async (): Promise<number> => {
-  const rows = await db.execute<{ max: string | null }>(sql`
-    SELECT MAX(occurred_at)::text AS max FROM ${ledgerEntries} WHERE source = 'openai'
-  `)
-  const max = Array.from(rows)[0]?.max
-  if (max) return Math.floor(new Date(max).getTime() / 1000)
-  const sixtyDaysAgo = new Date()
-  sixtyDaysAgo.setUTCDate(sixtyDaysAgo.getUTCDate() - 60)
-  return Math.floor(sixtyDaysAgo.getTime() / 1000)
+const LOOKBACK_DAYS = 60
+
+const lookbackStart = (): number => {
+  const start = new Date()
+  start.setUTCDate(start.getUTCDate() - LOOKBACK_DAYS)
+  start.setUTCHours(0, 0, 0, 0)
+  return Math.floor(start.getTime() / 1000)
 }
 
 const upsertCost = async (date: string, amountUsdCents: number): Promise<boolean> => {
@@ -38,7 +36,7 @@ const upsertCost = async (date: string, amountUsdCents: number): Promise<boolean
 
 export const syncOpenAICosts = async (): Promise<SyncResult> => {
   try {
-    const startUnix = await watermark()
+    const startUnix = lookbackStart()
     const endUnix = Math.floor(Date.now() / 1000)
     const dailyCosts = await fetchDailyCosts(startUnix, endUnix)
     const eligible = dailyCosts.filter((c) => c.amountUsdCents > 0)

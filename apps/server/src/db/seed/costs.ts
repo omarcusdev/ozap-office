@@ -12,15 +12,47 @@ type CostSeed = {
   occurredAt: string
 }
 
-export const manualCosts: CostSeed[] = [
-  { source: "salary", category: "payroll", externalId: "pedro-2026-05",
-    amountCents: 150000, currency: "BRL", occurredAt: "2026-05-05" },
+const PEDRO_START_MONTH = "2026-04"
+const PEDRO_BRL_CENTS = 150000
+const PEDRO_PAYDAY = "05"
+
+const monthIso = (date: Date): string =>
+  `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`
+
+const monthRange = (startMonth: string, endMonth: string): string[] => {
+  const [startYear, startMonthIdx] = startMonth.split("-").map(Number)
+  const [endYear, endMonthIdx] = endMonth.split("-").map(Number)
+  const months: string[] = []
+  const cursor = new Date(Date.UTC(startYear, startMonthIdx - 1, 1))
+  const stop = new Date(Date.UTC(endYear, endMonthIdx - 1, 1))
+  while (cursor.getTime() <= stop.getTime()) {
+    months.push(monthIso(cursor))
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1)
+  }
+  return months
+}
+
+const pedroEntries = (): CostSeed[] => {
+  const currentMonth = monthIso(new Date())
+  return monthRange(PEDRO_START_MONTH, currentMonth).map((month) => ({
+    source: "salary",
+    category: "payroll",
+    externalId: `pedro-${month}`,
+    amountCents: PEDRO_BRL_CENTS,
+    currency: "BRL",
+    occurredAt: `${month}-${PEDRO_PAYDAY}`,
+  }))
+}
+
+export const buildRecurringCosts = (): CostSeed[] => [
+  ...pedroEntries(),
   { source: "aws", category: "infra", externalId: "aws-2026-05",
     amountCents: 0, currency: "USD", occurredAt: "2026-05-31" },
 ]
 
 export const seedCosts = async (): Promise<void> => {
-  for (const c of manualCosts) {
+  const costs = buildRecurringCosts()
+  for (const c of costs) {
     const amountBrl = toBrlCents(c.amountCents, c.currency)
     await db.execute(sql`
       INSERT INTO ${ledgerEntries}
@@ -35,5 +67,5 @@ export const seedCosts = async (): Promise<void> => {
         occurred_at = EXCLUDED.occurred_at
     `)
   }
-  console.log(`Seeded ${manualCosts.length} manual cost rows`)
+  console.log(`Seeded ${costs.length} recurring cost rows`)
 }
