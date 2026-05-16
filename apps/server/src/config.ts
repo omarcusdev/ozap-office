@@ -25,4 +25,5 @@ export const config = {
   twitterAccessToken: process.env.TWITTER_ACCESS_TOKEN ?? "",
   twitterAccessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET ?? "",
   abacatepayApiKey: process.env.ABACATEPAY_API_KEY ?? "",
+  openaiAdminApiKey: process.env.OPENAI_ADMIN_API_KEY ?? "",
 }

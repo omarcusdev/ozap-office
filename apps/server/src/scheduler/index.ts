@@ -4,6 +4,7 @@ import { agents } from "../db/schema.js"
 import { isNotNull } from "drizzle-orm"
 import { executeAgent } from "../runtime/executor.js"
 import { syncRevenue } from "../ingestion/revenue-sync.js"
+import { syncOpenAICosts } from "../ingestion/openai-cost-sync.js"
 
 const MAX_JITTER_MS = 45 * 60 * 1000
 
@@ -47,6 +48,13 @@ export const startScheduler = () => {
     } catch (err) {
       console.error("[revenue-sync] cron failed:", err)
     }
+    console.log("[openai-cost-sync] cron triggered")
+    try {
+      const result = await syncOpenAICosts()
+      console.log("[openai-cost-sync]", JSON.stringify(result))
+    } catch (err) {
+      console.error("[openai-cost-sync] cron failed:", err)
+    }
   })
-  console.log("Scheduled daily revenue sync at 09:00 UTC (06:00 BRT)")
+  console.log("Scheduled daily revenue + OpenAI cost sync at 09:00 UTC (06:00 BRT)")
 }

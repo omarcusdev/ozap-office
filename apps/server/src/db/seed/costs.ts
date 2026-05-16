@@ -14,9 +14,7 @@ type CostSeed = {
 
 export const manualCosts: CostSeed[] = [
   { source: "salary", category: "payroll", externalId: "pedro-2026-05",
-    amountCents: 450000, currency: "BRL", occurredAt: "2026-05-05" },
-  { source: "openai", category: "ai_api", externalId: "openai-2026-04",
-    amountCents: 20000, currency: "USD", occurredAt: "2026-04-30" },
+    amountCents: 150000, currency: "BRL", occurredAt: "2026-05-05" },
   { source: "aws", category: "infra", externalId: "aws-2026-05",
     amountCents: 0, currency: "USD", occurredAt: "2026-05-31" },
 ]
