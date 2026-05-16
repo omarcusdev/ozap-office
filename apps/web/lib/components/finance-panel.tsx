@@ -66,6 +66,8 @@ const Skeleton = () => (
   </div>
 )
 
+const MIN_MONTH = "2026-05"
+
 const MonthNav = ({
   selected,
   onChange,
@@ -74,11 +76,13 @@ const MonthNav = ({
   onChange: (m: string) => void
 }) => {
   const isCurrent = selected === currentMonth()
+  const isMin = selected === MIN_MONTH
   return (
     <div className="flex items-center gap-1">
       <button
-        onClick={() => onChange(shiftMonth(selected, -1))}
-        className="px-1.5 py-0.5 text-mute hover:text-sand transition-colors"
+        onClick={() => !isMin && onChange(shiftMonth(selected, -1))}
+        disabled={isMin}
+        className="px-1.5 py-0.5 text-mute hover:text-sand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         aria-label="Mês anterior"
       >
         ‹

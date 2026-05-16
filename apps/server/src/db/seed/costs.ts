@@ -12,7 +12,7 @@ type CostSeed = {
   occurredAt: string
 }
 
-const PEDRO_START_MONTH = "2026-04"
+const PEDRO_START_MONTH = "2026-05"
 const PEDRO_BRL_CENTS = 150000
 const PEDRO_PAYDAY = "05"
 
