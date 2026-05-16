@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
-    "sync-revenue": "tsx scripts/sync-revenue.ts"
+    "sync-revenue": "tsx scripts/sync-revenue.ts",
+    "sync-openai-costs": "tsx scripts/sync-openai-costs.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.700.0",
