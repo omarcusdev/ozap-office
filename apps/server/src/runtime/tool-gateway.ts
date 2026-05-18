@@ -10,6 +10,14 @@ const GUARDED_OPS: Record<
     level: "guarded",
     reason: "Activating a campaign spends real money on Meta Ads",
   }),
+  postTweet: (input) => {
+    const text = typeof input.text === "string" ? input.text : ""
+    const preview = text.length > 140 ? `${text.slice(0, 140)}…` : text
+    return {
+      level: "guarded",
+      reason: `Tweet pending human review before publishing: "${preview}"`,
+    }
+  },
   updateBudget: (input) => {
     const newDailyBudget = input.newDailyBudget as number | undefined
     const currentDailyBudget = input.currentDailyBudget as number | undefined
